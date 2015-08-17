@@ -23,8 +23,6 @@ import org.pentaho.platform.dataaccess.datasource.api.AnalysisService;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
-import org.pentaho.platform.plugin.services.importer.ArchiveLoader;
-import org.pentaho.platform.plugin.services.importer.IPlatformImporter;
 
 import br.com.mercadoanalitico.pentaho.fastsync.models.Output;
 import br.com.mercadoanalitico.pentaho.fastsync.util.FileSystem;
