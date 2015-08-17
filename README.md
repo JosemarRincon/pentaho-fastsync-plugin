@@ -1,1 +1,1 @@
-# pentaho-sync2go-plugin
+# pentaho-fastsync-plugin

@@ -257,10 +257,10 @@
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-hadoop-hive-jdbc-shim-54.2015.06.00.jar"/>
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-metadata-5.4.0.0-128.jar"/>
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-ofc4j-1.1.0.jar"/>
-	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-platform-api-5.4.0.0-128.jar"/>
+	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-platform-api-5.4.0.0-128.jar" sourcepath="/pentaho5-plataform"/>
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-platform-build-utils-5.4.0.0-128.jar"/>
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-platform-core-5.4.0.0-128.jar"/>
-	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-platform-extensions-5.4.0.0-128.jar"/>
+	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-platform-extensions-5.4.0.0-128.jar" sourcepath="/pentaho5-platform-extensions"/>
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-platform-repository-5.4.0.0-128.jar"/>
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-platform-scheduler-5.4.0.0-128.jar"/>
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/pentaho-registry-5.4.0.0-128.jar"/>
@@ -353,5 +353,6 @@
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/xpp3_min-1.1.4c.jar"/>
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/xstream-1.4.2.jar"/>
 	<classpathentry kind="lib" path="lib/oncase-biserver-url-exposer-0.1.0.jar"/>
+	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/pentaho-solutions/system/data-access/lib/pentaho-bi-platform-data-access-5.4.0.0-128.jar" sourcepath="/pentaho5-data-access"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

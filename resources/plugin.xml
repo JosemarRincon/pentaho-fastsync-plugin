@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin title="fastsync">
+
+	<!--
+    <static-paths>
+        <static-path url="/fastsync/resources" localFolder="resources"/>
+    </static-paths>
+	-->
+
+</plugin>
