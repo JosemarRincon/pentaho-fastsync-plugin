@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,8 +24,10 @@ import org.pentaho.platform.dataaccess.datasource.api.AnalysisService;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
+import org.pentaho.platform.web.http.security.PentahoLogoutHandler;
 
 import br.com.mercadoanalitico.pentaho.fastsync.models.Output;
+import br.com.mercadoanalitico.pentaho.fastsync.security.Login;
 import br.com.mercadoanalitico.pentaho.fastsync.util.FileSystem;
 import br.com.mercadoanalitico.pentaho.fastsync.util.PublishUtil;
 import br.com.mercadoanalitico.pentaho.fastsync.util.Repository;
@@ -180,6 +183,31 @@ public class FastSyncREST {
 
 		try
 		{
+			// Get Auth Query Parameters
+			String myType = "";
+			myType = info.getQueryParameters().getFirst("type");
+	
+			String myToken = "";
+			myToken = info.getQueryParameters().getFirst("token");
+			
+			String myUrlEncoded = "";
+			myUrlEncoded = info.getQueryParameters().getFirst("urlEncoded");
+
+			// Try to do login using Integrator if parameters are defined
+			if ( !("".equalsIgnoreCase(myType)) && !(myType == null) && !("undefined".equalsIgnoreCase(myType)) && !("".equalsIgnoreCase(myToken)) && !(myToken == null) && !("undefined".equalsIgnoreCase(myToken)) && !("".equalsIgnoreCase(myUrlEncoded)) && !(myUrlEncoded == null) && !("undefined".equalsIgnoreCase(myUrlEncoded)) )
+			{				
+				Map<String, Object> ret = Login.doLogin(request, response, info, myType, myToken, myUrlEncoded);
+				// Authentication Success
+				if (!((boolean) ret.get("ok"))) 
+				{
+					output.setMessage("Authentication failed.");
+					output.setError(true);
+					output.setError_message((String) ret.get("message"));
+					
+					return output;
+				}
+			}
+			
 			String delete = info.getQueryParameters().getFirst("delete");			// Delete files on JCR/FileSystem that do not exist on FileSystem/JCR
 			String deletePerm = info.getQueryParameters().getFirst("deletePerm");	// Permanently deletes the selected list of files from the repository
 			String debug = info.getQueryParameters().getFirst("debug");
@@ -239,7 +267,7 @@ public class FastSyncREST {
             
             
 			output.setError(false);
-			output.setMessage("Successful synchronize to JCR from Filesystem.");
+			output.setMessage("Successful synchronize to JCR from FileSystem.");
 		} 
 		catch (Exception e)
 		{
@@ -254,6 +282,10 @@ public class FastSyncREST {
             try 
             {
 				FileSystem.deleteFolder(tmpDir);
+				
+				// Finish user session
+				PentahoLogoutHandler pentahoLogoutHandler = new PentahoLogoutHandler();
+				pentahoLogoutHandler.logout(request, response, null);
 			} 
             catch (IOException e) 
 			{

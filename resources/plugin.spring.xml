@@ -19,7 +19,7 @@
         	<value>
           		<![CDATA[
 CONVERT_URL_TO_LOWERCASE_BEFORE_COMPARISON
-\A/plugin/fastsync/api.*\Z=Admin, Authenticated
+\A/plugin/fastsync/api.*\Z=Anonymous,Authenticated
 \A/.*\Z=Authenticated
 				]]>
         	</value>
