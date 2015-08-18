@@ -26,9 +26,10 @@ public class Repository {
 	// Remove from the firstList all elements of secondList
 	public static Collection<String> getDiff(Collection<String> firstList, Collection<String> secondList)	
 	{
-		firstList.removeAll(secondList);
+		Collection<String> _firstList = new ArrayList<String>(firstList);
+		_firstList.removeAll(secondList);
 		
-		return firstList;
+		return _firstList;
 	}
 
 	// Get folders and file from JCR
@@ -146,7 +147,7 @@ public class Repository {
 		return StringUtils.join(deleteList.toArray(), ",");
 	}
 
-	private static Collection<String> addPrefix(String root, Collection<String> collection) 
+	public static Collection<String> addPrefix(String root, Collection<String> collection) 
 	{
 		Collection<String> ret = new ArrayList<String>();
 		

@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -21,6 +22,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.collections.ListUtils;
 import org.pentaho.platform.api.engine.PentahoAccessControlException;
 import org.pentaho.platform.dataaccess.datasource.api.AnalysisService;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
@@ -30,7 +32,9 @@ import org.pentaho.platform.plugin.services.importer.PlatformImportException;
 import org.pentaho.platform.web.http.security.PentahoLogoutHandler;
 import org.springframework.transaction.CannotCreateTransactionException;
 
+import br.com.mercadoanalitico.pentaho.fastsync.models.List;
 import br.com.mercadoanalitico.pentaho.fastsync.models.Output;
+import br.com.mercadoanalitico.pentaho.fastsync.models.Repo;
 import br.com.mercadoanalitico.pentaho.fastsync.security.Login;
 import br.com.mercadoanalitico.pentaho.fastsync.util.FileSystem;
 import br.com.mercadoanalitico.pentaho.fastsync.util.PublishUtil;
@@ -376,6 +380,82 @@ public class FastSyncREST {
 		return output;
 	}
 	
-}
+	@SuppressWarnings("unchecked")
+	@GET
+	@Path("/sync/list/jcr")
+	@Produces("application/json")
+	public List listSyncJcr ( @Context UriInfo info ) 
+	{
+		List returnList = new List();
+		
+		// Parameters to synchronize a solution
+		String solution = info.getQueryParameters().getFirst("solution");	// Relative to the pentaho-solution folder
+		if ( "".equalsIgnoreCase(solution) || solution == null )
+		{
+			returnList.setError(true);
+			returnList.setError_message("FastSync: Missing parameter.");
+			returnList.setMessage("Parameter solution not defined.");
+			return returnList;
+		} 
+		else if ( "system".equalsIgnoreCase(solution) ) 
+		{
+			returnList.setError(true);
+			returnList.setError_message("FastSync: Invalid solution.");
+			returnList.setMessage("System folder can not be synchronized.");
+			return returnList;
+		}
 
+		// Get path parameter
+		String path = info.getQueryParameters().getFirst("path").toLowerCase();	// Relative to the PUC Browser files
+		if ( "".equalsIgnoreCase(path) || path == null )
+		{
+			path = "public";
+		} 
+		
+		// Define full solution path
+		String _PATH = solution + File.separator;
+		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(_PATH);
+		
+		// Get list of files and folders from JCR
+		String location = (":" + path + File.separator + solution + ":").replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":");
+		Collection<String> repoFiles = Repository.getRepoFiles(location).getItemsList();
+
+		// Get list of files and folders from Filesystem
+		Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
+		Collection<String> _localFiles = Repository.addPrefix(path, localFiles);
+
+		// Get list of files to be deleted
+		Collection<String> deleteList = Repository.getDiff(repoFiles, _localFiles);
+		
+		for (String item : deleteList) 
+		{
+			returnList.getDelete().add(item);
+		}
+		
+		// Get list of files to be updated
+		Collection<String> updateList = Repository.getDiff(repoFiles, deleteList);
+		
+		for (String item : updateList) 
+		{
+			returnList.getUpdate().add(item);
+		}
+
+		// Get list of files to be created
+		updateList.add(location.substring(0,location.length()-1));
+		Collection<String> createList = Repository.getDiff(_localFiles, updateList);
+
+		for (String item : createList) 
+		{
+			returnList.getCreate().add(item);
+		}
+
+		
+	
+		returnList.setError(false);
+		returnList.setMessage("Synchronize to JCR from FileSystem.");
+		
+		return returnList;
+	}
+
+}
 
