@@ -23,7 +23,6 @@ public class Zip {
     private String packFilePath;
     private String packDirectoryPath;
     private String fullPathZipFileName;
-    private String rootDir = "";
      
     /**
      * Pack single file.
@@ -121,7 +120,7 @@ public class Zip {
     	// Add empty folder
     	if ( dirElements.length == 0 && dir.isDirectory() )
     	{
-            ZipEntry ze= new ZipEntry(directoryPath.replaceAll(packDirectoryPath.replaceAll(rootDir, ""), "") + "/");
+            ZipEntry ze= new ZipEntry(directoryPath.replaceAll(packDirectoryPath, "") + "/");
     		zos.putNextEntry(ze);
     	}
     	
@@ -139,7 +138,7 @@ public class Zip {
                 // For files add the a ZIP entry
                 // THIS IS IMPORTANT: a ZIP entry needs to be a relative path to the file
                 // so we cut off the path to the directory that is being packed.
-                ZipEntry ze= new ZipEntry(dirElementPath.replaceAll(packDirectoryPath.replaceAll(rootDir, ""), ""));
+                ZipEntry ze= new ZipEntry(dirElementPath.replaceAll(packDirectoryPath, ""));
                 zos.putNextEntry(ze);
                  
                 // Open input stream to packed file
@@ -171,10 +170,6 @@ public class Zip {
 
 	public void setFullPathZipFileName(String fullPathZipFileName) {
 		this.fullPathZipFileName = fullPathZipFileName;
-	}
-
-	public void setRootDir(String rootDir) {
-		this.rootDir = rootDir + "/";
 	}
 
 }

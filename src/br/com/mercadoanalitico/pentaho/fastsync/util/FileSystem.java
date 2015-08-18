@@ -80,9 +80,22 @@ public class FileSystem {
 	 * @return void
 	 * @throws IOException 
 	 */
-	public static void deleteFolder(String directory) throws IOException {
+	public static void deleteFolder(File directory) throws IOException {
 
-		FileUtils.deleteDirectory(new File(directory));
+		FileUtils.deleteDirectory(directory);
+
+	}
+
+	/**
+	 * Copiar diretorio para outro local
+	 * 
+	 * @param folderName/fileName
+	 * @return void
+	 * @throws IOException 
+	 */
+	public static void copyDirectory(File from, File to) throws IOException {
+
+		FileUtils.copyDirectory(from, to);
 
 	}
 

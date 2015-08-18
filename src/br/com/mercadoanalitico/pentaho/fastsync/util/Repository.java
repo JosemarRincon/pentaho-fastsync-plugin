@@ -21,6 +21,8 @@ import br.com.mercadoanalitico.pentaho.fastsync.pentaho.ArchiveLoader;
 
 public class Repository {
 	
+	private static FileService fileService = null;
+	
 	// Remove from the firstList all elements of secondList
 	public static Collection<String> getDiff(Collection<String> firstList, Collection<String> secondList)	
 	{
@@ -32,7 +34,11 @@ public class Repository {
 	// Get folders and file from JCR
 	public static Repo getRepoFiles(String location) 
 	{
-		FileService fileService = new FileService();
+		location = location.replaceAll("/+", ":").replaceAll("\\\\+", ":") + ":";
+		location = location.replaceAll(":+", ":");
+
+		if ( fileService == null) 
+			fileService = new FileService();
 
 		// Folders and files list
 		Collection<String> items = new ArrayList<String>();
@@ -105,25 +111,26 @@ public class Repository {
 	}
 	
 	// Get a list of files and folders to be delete in the JCR
-	public static String getDeleteList(String solution, String solutionFullPath, boolean debug)
+	public static String getDeleteList(String root, String location, String solutionFullPath, boolean debug)
 	{
 		// Get Repository items and ids
-		Repo repo = getRepoFiles( ":" + solution + ":" );
+		Repo repo = getRepoFiles(location);
 
 		// Get list of files and folders from JCR
 		Collection<String> repoFiles = repo.getItemsList();
 		
 		// Get list of files and folders from Filesystem
 		Collection<String> localFiles = getLocalFiles(solutionFullPath);
+		Collection<String> _localFiles = addPrefix(root, localFiles);
 		
-		if (debug) System.out.println("----->  repoFiles: " + repoFiles);
-		if (debug) System.out.println("-----> localFiles: " + localFiles);
+		if (debug) System.out.println("\n----->  repoFiles: " + repoFiles + "\n");
+		if (debug) System.out.println("\n-----> localFiles: " + _localFiles + "\n");
 
 		List<String> deleteList = new ArrayList<String>();
 		
-		Collection<String> diffList = getDiff(repoFiles, localFiles);
+		Collection<String> diffList = getDiff(repoFiles, _localFiles);
 		
-		if (debug) System.out.println("diffList: " + diffList);
+		if (debug) System.out.println("\n-----> diffList: " + diffList + "\n");
 
 		for (String key : diffList) {
 			
@@ -139,9 +146,22 @@ public class Repository {
 		return StringUtils.join(deleteList.toArray(), ",");
 	}
 
+	private static Collection<String> addPrefix(String root, Collection<String> collection) 
+	{
+		Collection<String> ret = new ArrayList<String>();
+		
+		for (String item : collection) 
+		{
+			ret.add( (":" + root + item).replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":") );
+		}
+		
+		return ret;
+	}
+
 	public static void deleteItems(String deleteList, boolean perm) throws Exception
 	{
-		FileService fileService = new FileService();
+		if ( fileService == null) 
+			fileService = new FileService();
 
 		if (perm) fileService.doDeleteFilesPermanent(deleteList);
 		else fileService.doDeleteFiles(deleteList);
