@@ -24,7 +24,9 @@ import javax.ws.rs.core.UriInfo;
 
 import org.pentaho.platform.api.engine.PentahoAccessControlException;
 import org.pentaho.platform.dataaccess.datasource.api.AnalysisService;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.plugin.action.mondrian.catalog.IMondrianCatalogService;
 import org.pentaho.platform.plugin.services.importer.PlatformImportException;
 import org.pentaho.platform.web.http.security.PentahoLogoutHandler;
 import org.springframework.transaction.CannotCreateTransactionException;
@@ -180,6 +182,11 @@ public class FastSyncREST {
 			 * );
 			 */
 			service.putMondrianSchema( dataInputStream, schemaFileInfo, catalogName, null, null, true, xmlaEnabled, "Datasource=" + datasourceName, null );
+			
+			// Flush the Mondrian cache to show imported data-sources.
+			IMondrianCatalogService mondrianCatalogService = PentahoSystem.get( IMondrianCatalogService.class, "IMondrianCatalogService", PentahoSessionHolder.getSession() );
+			mondrianCatalogService.reInit( PentahoSessionHolder.getSession() );
+
 		          
 			output.setError(false);
 			output.setMessage(catalogName + " published successful.");
