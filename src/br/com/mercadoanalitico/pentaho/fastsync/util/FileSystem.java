@@ -1,7 +1,6 @@
 package br.com.mercadoanalitico.pentaho.fastsync.util;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -9,12 +8,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Pattern;
+import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 
 public class FileSystem {
 
@@ -93,46 +89,13 @@ public class FileSystem {
 	/**
 	 * Copiar diretorio para outro local
 	 * 
-	 * @param src
-	 * @param dst
+	 * @param folderName/fileName
 	 * @return void
 	 * @throws IOException 
 	 */
 	public static void copyDirectory(File from, File to) throws IOException {
 
 		FileUtils.copyDirectory(from, to);
-
-	}
-
-	/**
-	 * Copiar diretorio para outro local
-	 * 
-	 * @param src
-	 * @param dst
-	 * @param exclude regex list
-	 * @return void
-	 * @throws IOException 
-	 */
-	public static void copyDirectory(File from, File to, String regexFilterList) throws IOException {
-
-		String[] values = regexFilterList.split(",");
-		final Set<Pattern> hashSet = new HashSet<>();
-		for( String p : values ) {
-		    hashSet.add( Pattern.compile(p) );
-		}
-
-		FileUtils.copyDirectory(from, to, new FileFilter() {
-			
-			@Override
-			public boolean accept(File pathname) {
-				for (Pattern pattern : hashSet) {
-					if ( pattern.matcher( FilenameUtils.separatorsToUnix(pathname.getPath()) ).matches() ) {
-						return false;
-					}
-				}
-				return true;
-			}
-		});
 
 	}
 
