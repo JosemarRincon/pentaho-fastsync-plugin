@@ -22,19 +22,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.commons.collections.ListUtils;
 import org.pentaho.platform.api.engine.PentahoAccessControlException;
 import org.pentaho.platform.dataaccess.datasource.api.AnalysisService;
-import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.plugin.services.importer.PlatformImportException;
 import org.pentaho.platform.web.http.security.PentahoLogoutHandler;
 import org.springframework.transaction.CannotCreateTransactionException;
 
+import br.com.mercadoanalitico.pentaho.fastsync.engine.PluginConfig;
 import br.com.mercadoanalitico.pentaho.fastsync.models.List;
 import br.com.mercadoanalitico.pentaho.fastsync.models.Output;
-import br.com.mercadoanalitico.pentaho.fastsync.models.Repo;
 import br.com.mercadoanalitico.pentaho.fastsync.security.Login;
 import br.com.mercadoanalitico.pentaho.fastsync.util.FileSystem;
 import br.com.mercadoanalitico.pentaho.fastsync.util.PublishUtil;
@@ -313,7 +310,7 @@ public class FastSyncREST {
             tmpDir = FileSystem.getTmpDir(solution);
             dstDir = new File(tmpDir + File.separator + solution + File.separator + path + File.separator + solution + File.separator);
             
-            FileSystem.copyDirectory(new File(solutionFullPath), dstDir);
+            FileSystem.copyDirectory( new File(solutionFullPath), dstDir, PluginConfig.props.getProperty("import.exclude.list") );
 			
             // Pack solution
             Zip zipPack = new Zip();
