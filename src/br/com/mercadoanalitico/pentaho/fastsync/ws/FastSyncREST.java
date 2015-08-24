@@ -323,7 +323,7 @@ public class FastSyncREST {
             zipPack.packDirectory();
 
             // Load solution zip file to JCR
-            Repository.loadFileToJcr(tmpDir);
+            Repository.importFileToJcr(tmpDir, fullZipName, debug);
             
             
 			output.setError(false);
