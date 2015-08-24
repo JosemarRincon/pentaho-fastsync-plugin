@@ -18,7 +18,7 @@ public class FastSyncTemplateFactory implements BeanFactoryPostProcessor {
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException 
 	{
-		//initPluginProperties();
+		initPluginProperties();
 	}
 	
 	private void initPluginProperties() 
