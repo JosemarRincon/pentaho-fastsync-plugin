@@ -30,6 +30,7 @@ import org.pentaho.platform.plugin.services.importer.PlatformImportException;
 import org.pentaho.platform.web.http.security.PentahoLogoutHandler;
 import org.springframework.transaction.CannotCreateTransactionException;
 
+import br.com.mercadoanalitico.pentaho.fastsync.engine.PluginConfig;
 import br.com.mercadoanalitico.pentaho.fastsync.models.List;
 import br.com.mercadoanalitico.pentaho.fastsync.models.Output;
 import br.com.mercadoanalitico.pentaho.fastsync.security.Login;
@@ -318,7 +319,7 @@ public class FastSyncREST {
             tmpDir = FileSystem.getTmpDir(solution);
             dstDir = new File(tmpDir + File.separator + solution + File.separator + path + File.separator + solution + File.separator);
             
-            FileSystem.copyDirectory(new File(solutionFullPath), dstDir);
+            FileSystem.copyDirectory( new File(solutionFullPath), dstDir, PluginConfig.props.getProperty("import.exclude.list") );
 			
             // Pack solution
             Zip zipPack = new Zip();
