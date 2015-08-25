@@ -441,6 +441,14 @@ public class FastSyncREST {
 		Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
 		Collection<String> _localFiles = Repository.addPrefix(path, localFiles);
 
+		// Get excluded list
+		Collection<String> excludeList = Repository.excludeByRegex( _localFiles, PluginConfig.props.getProperty("import.exclude.list") );
+		for (String item : excludeList) {
+			
+			returnList.getExclude().add(item);
+			
+		}
+		
 		// Get list of files to be deleted
 		Collection<String> deleteList = Repository.getDiff(repoFiles, _localFiles);
 		
@@ -459,7 +467,7 @@ public class FastSyncREST {
 
 		// Get list of files to be created
 		updateList.add(location.substring(0,location.length()-1));
-		Collection<String> createList = Repository.getDiff(_localFiles, updateList);
+		Collection<String> createList = Repository.getDiff( Repository.getDiff(_localFiles, excludeList), updateList );
 
 		for (String item : createList) 
 		{

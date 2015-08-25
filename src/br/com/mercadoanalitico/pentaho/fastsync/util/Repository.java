@@ -7,8 +7,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.core.Response;
 
@@ -208,4 +211,29 @@ public class Repository {
 			input.close();
 		}
  	}
+
+	public static Collection<String> excludeByRegex( Collection<String> list, String regexFilterList) {
+		
+		Collection<String> excludeList = new ArrayList<String>();
+		
+		String[] values = regexFilterList.split(",");
+		final Set<Pattern> hashSet = new HashSet<>();
+		for( String p : values ) {
+			hashSet.add( Pattern.compile(p) );
+		}
+
+		for (String item : list) 
+		{
+			for (Pattern pattern : hashSet) 
+			{
+				if ( pattern.matcher( item ).matches() ) 
+				{
+					excludeList.add(item);
+					break;
+				} 
+			}
+		}
+
+		return excludeList;
+	}
 }

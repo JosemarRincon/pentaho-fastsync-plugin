@@ -10,6 +10,7 @@ public class List {
 	private ArrayList<String> update; 
 	private ArrayList<String> create;
 	private ArrayList<String> delete;
+	private ArrayList<String> exclude;
 
 	private String message;
 	private Boolean error;
@@ -20,9 +21,10 @@ public class List {
 		setError(false);
 		setError_message("");
 
-		update = new ArrayList<String>(); 
-		create = new ArrayList<String>();
-		delete = new ArrayList<String>();
+		update  = new ArrayList<String>(); 
+		create  = new ArrayList<String>();
+		delete  = new ArrayList<String>();
+		exclude = new ArrayList<String>();
 	}
 	
 	public ArrayList<String> getUpdate() {
@@ -71,6 +73,14 @@ public class List {
 
 	public void setError_message(String error_message) {
 		this.error_message = error_message;
+	}
+
+	public ArrayList<String> getExclude() {
+		return exclude;
+	}
+
+	public void setExclude(ArrayList<String> exclude) {
+		this.exclude = exclude;
 	}
 	
 }
