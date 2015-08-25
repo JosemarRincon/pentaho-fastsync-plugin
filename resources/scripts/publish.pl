@@ -48,7 +48,7 @@ my $token = time;
 # Encode url
 #
 ######################################
-my $urlEncoded = encode_base64("/pentaho/plugin/fastsync/api/sync?ts=" . $token);
+my $urlEncoded = encode_base64("/pentaho/plugin/fastsync/api/publish?ts=" . $token);
 $urlEncoded =~ s/[\r\n]+$//;
 
 ######################################
