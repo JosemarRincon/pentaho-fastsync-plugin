@@ -22,19 +22,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.commons.collections.ListUtils;
 import org.pentaho.platform.api.engine.PentahoAccessControlException;
+import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.dataaccess.datasource.api.AnalysisService;
-import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.plugin.services.importer.PlatformImportException;
 import org.pentaho.platform.web.http.security.PentahoLogoutHandler;
 import org.springframework.transaction.CannotCreateTransactionException;
 
 import br.com.mercadoanalitico.pentaho.fastsync.models.List;
 import br.com.mercadoanalitico.pentaho.fastsync.models.Output;
-import br.com.mercadoanalitico.pentaho.fastsync.models.Repo;
 import br.com.mercadoanalitico.pentaho.fastsync.security.Login;
 import br.com.mercadoanalitico.pentaho.fastsync.util.FileSystem;
 import br.com.mercadoanalitico.pentaho.fastsync.util.PublishUtil;
@@ -224,6 +221,14 @@ public class FastSyncREST {
 	}
 
 	
+	/*
+	 * 
+	 * Permissions needed to publish a new schema:
+	 * 		- Create Content
+	 * 		- Publish Content or Administer Security
+	 *		- Folders Write Permission
+	 *  
+	 */
 	@SuppressWarnings("unchecked")
 	@GET
 	@Path("/sync")
@@ -326,13 +331,24 @@ public class FastSyncREST {
             zipPack.packDirectory();
 
             // Load solution zip file to JCR
-            Repository.loadFileToJcr(tmpDir);
-            
+            Repository.importFileToJcr(tmpDir, fullZipName, debug);
             
 			output.setError(false);
 			output.setMessage("Successful synchronize to JCR from FileSystem.");
 			
 		}
+    	catch( PentahoAccessControlException e ) {
+			output.setError(true);
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Access denied. You do not have role permission to create and publish content.");
+			e.printStackTrace();
+    	}
+    	catch( UnifiedRepositoryAccessDeniedException e ) {
+			output.setError(true);
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Access denied. Check folder permissions.");
+			e.printStackTrace();
+    	}
 		catch ( PlatformImportException e ) 
 		{
 			output.setError(true);

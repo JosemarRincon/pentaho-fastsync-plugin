@@ -1,7 +1,8 @@
 package br.com.mercadoanalitico.pentaho.fastsync.util;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -9,15 +10,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
-import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.pentaho.platform.plugin.services.importer.IPlatformImporter;
-import org.pentaho.platform.plugin.services.importer.PlatformImportException;
+import org.pentaho.platform.api.engine.PentahoAccessControlException;
+import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.repository2.unified.webservices.RepositoryFileDto;
+import org.pentaho.platform.web.http.api.resources.RepositoryImportResource;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 import br.com.mercadoanalitico.pentaho.fastsync.models.Repo;
-import br.com.mercadoanalitico.pentaho.fastsync.pentaho.ArchiveLoader;
+
+import com.sun.jersey.core.header.FormDataContentDisposition;
 
 public class Repository {
 	
@@ -169,14 +174,38 @@ public class Repository {
 		
 	}
 
-	public static void loadFileToJcr(String location) throws FileNotFoundException, PlatformImportException
-	{
-		File directory = new File(location);
-		
-        // Instantiate the importer
-        IPlatformImporter importer = PentahoSystem.get( IPlatformImporter.class );
-        ArchiveLoader archiveLoader = new ArchiveLoader( importer );
-        archiveLoader.loadAll( directory, ArchiveLoader.ZIPS_FILTER );
-	}
+	public static void importFileToJcr(String location, String zipFile, String debug) throws Exception 
+ 	{
+		String logLevel = ("True".equalsIgnoreCase(debug) ? "DEBUG" : "INFO");
+ 		
+		InputStream input = new FileInputStream(zipFile);
 
+		try 
+		{
+			FormDataContentDisposition fileInfo = FormDataContentDisposition.name(FilenameUtils.getName(zipFile)).fileName(FilenameUtils.getName(zipFile)).build();
+			
+			RepositoryImportResource repositoryImporter = new RepositoryImportResource();
+			
+			Response ret = repositoryImporter.doPostImport(location, input, "true", "true", "true", "true", "UTF-8", logLevel, fileInfo, null);
+			
+			if (ret.getStatus() == 403) 
+			{
+				throw new UnifiedRepositoryAccessDeniedException("FORBIDDEN");
+			}
+			else if (ret.getStatus() != 200) 
+			{
+				String msg = ret.getEntity().toString();
+				
+				if ( msg.contains("PentahoAccessControlException") )
+					throw new PentahoAccessControlException("Access Denied");
+				else
+					throw new Exception(msg);
+			}
+
+		} 
+		finally 
+		{
+			input.close();
+		}
+ 	}
 }
