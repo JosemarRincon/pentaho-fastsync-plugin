@@ -1,0 +1,21 @@
+.spinner {
+	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.marginLeft {
+	margin-left: 20px;
+}
+
+#message-box {
+	margin-top: 20px;
+}
+
+.bold {
+	font-weight: bold;
+}
+
+hr {
+	border-color: #999;
+}

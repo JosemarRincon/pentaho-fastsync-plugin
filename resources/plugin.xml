@@ -2,10 +2,16 @@
 
 <plugin title="fastsync">
 
-	<!--
+    <overlays>
+		<overlay id="startup.fastsync" resourcebundle="content/fastsync/resources/lang/messages">
+		    <menubar id="toolsmenu">
+		        <menuitem id="fastsync" label="${Launcher.fastsync}" command="mantleXulHandler.openUrl('${Launcher.fastsync}','${Launcher.fastsync_TOOLTIP}','/pentaho/content/fastsync/resources/app/views/index.html')"/>
+		    </menubar>
+		</overlay>
+    </overlays>
+
     <static-paths>
         <static-path url="/fastsync/resources" localFolder="resources"/>
     </static-paths>
-	-->
 
 </plugin>

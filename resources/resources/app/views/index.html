@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html ng-app="app">
+
+	<head>
+		<meta charset="UTF-8">
+		<title>FastSync</title>
+
+		<!-- FOR ANGULAR ROUTING -->
+		<base href="/">
+
+		<!-- CSS  -->
+		<!-- load bootstrap from CDN and custom CSS -->
+		<link rel="stylesheet" href="/pentaho/content/fastsync/resources/assets/css/style.css">
+		<link rel="stylesheet" href="/pentaho/content/fastsync/resources/assets/css/bootstrap.min.css">
+		
+		<!-- JS -->
+		<!-- load bootstrap and jquery from CDN -->
+		<script src="/pentaho/content/fastsync/resources/assets/lib/jquery-1.11.3.min.js"></script>
+		<script src="/pentaho/content/fastsync/resources/assets/lib/bootstrap.min.js"></script>
+		
+		<!-- load angular and angular-route via CDN -->
+		<script src="/pentaho/content/fastsync/resources/assets/lib/angular.min.js"></script>
+		<script src="/pentaho/content/fastsync/resources/app/app.js"></script>
+
+		<!-- controllers -->
+		<script src="/pentaho/content/fastsync/resources/app/controllers/appCtrl.js"></script>
+
+		<!-- services -->
+		<script src="/pentaho/content/fastsync/resources/app/services/pentahoService.js"></script>
+		
+	</head>
+
+	<body>
+	
+		<!-- NAVBAR -->
+		<header>
+			<div class="navbar navbar-inverse">
+				<div class="container">
+					<div class="navbar-header">
+						<h4><span class="glyphicon glyphicon-fire text-danger"></span> Synchronize to JCR from FileSystem</a></h4>
+					</div>	
+				</div>
+			</div>
+		</header>
+	
+		<main id="principal" class="container" ng-controller="appCtrl">
+
+			<form name="inputForm">
+				<div class="row">
+					<div class="col-md-4"> <input class="form-control" type="text" ng-model="form.solution" name="solution" placeholder="Solution" ng-required="true" /> </div>
+					<div class="col-md-4"> <input class="form-control" type="text" ng-model="form.path" name="path" placeholder="Path" ng-required="true" /> </div>
+					<div class="col-md-2"> <button class="btn btn-primary btn-block" ng-click="getJcrList(form.solution, form.path)" ng-disabled="inputForm.$invalid"> Refresh <span class="glyphicon glyphicon-refresh" /> </button> </div>
+					<div class="col-md-2">
+						<div class="dropdown">
+							<button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" ng-disabled="inputForm.$invalid" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+								Synchronize
+								<span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+								<li class="active"><a href="" ng-click="syncJcr(form.solution, form.path, form.checkboxModel.delete, form.checkboxModel.deletePerm, form.checkboxModel.debug)" >Go</a></li>
+								<li class="marginLeft"><input type="checkbox" ng-model="form.checkboxModel.delete" > Delete</li>
+								<li class="marginLeft"><input type="checkbox" ng-model="form.checkboxModel.deletePerm" > Delete Permanent</li>
+								<li class="marginLeft"><input type="checkbox" ng-model="form.checkboxModel.debug" > Debug</li>
+							</ul>
+						</div>					
+					</div>
+				</div>
+			</form>
+
+			<div id="message-box" class="alert alert-danger" role="alert" style="display: none;">
+			  <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			  <div id="message-alert">{{messageAlert}}</div>
+			</div>
+			
+			<hr />
+			
+			<div class="spinner" ng-show="loading">
+                <img src="/pentaho/content/fastsync/resources/assets/img/spinner.gif">
+			</div>
+
+
+			<div id="menu" ng-show="showFlag">
+				<div class="panel list-group">
+					<a href="" class="list-group-item bold" ng-click="setCollapse('cr')">FILES TO BE CREATED  <span class="label label-info">{{createSize}}</span> </span></a>
+					<div id="cr" class="sublinks {{collapse.cr}}" ng-repeat="item in create">
+						<a class="list-group-item small"><span class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
+					</div>
+				</div>
+
+				<div class="panel list-group">
+					<a href="" class="list-group-item bold" ng-click="setCollapse('de')">FILES TO BE DELETED  <span class="label label-info">{{deleteSize}}</span> </span></a>
+					<div id="de" class="sublinks {{collapse.de}}" ng-repeat="item in delete">
+						<a class="list-group-item small"><span class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
+					</div>
+				</div>
+
+				<div class="panel list-group">
+					<a href="" class="list-group-item bold" ng-click="setCollapse('up')">FILES TO BE UPDATED  <span class="label label-info">{{updateSize}}</span> </span></a>
+					<div id="up" class="sublinks {{collapse.up}}" ng-repeat="item in update">
+						<a class="list-group-item small"><span class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
+					</div>
+				</div>
+
+				<div class="panel list-group">
+					<a href="" class="list-group-item bold" ng-click="setCollapse('ex')">EXCLUDED FILES  <span class="label label-info">{{excludeSize}}</span> </span></a>
+					<div id="ex" class="sublinks {{collapse.ex}}" ng-repeat="item in exclude">
+						<a class="list-group-item small"><span class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
+					</div>
+				</div>
+
+			</div>
+			
+		</main>
+
+	</body>
+</html>
