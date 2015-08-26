@@ -429,55 +429,77 @@ public class FastSyncREST {
 			path = "public";
 		} 
 		
-		// Define full solution path
-		String _PATH = solution + File.separator;
-		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(_PATH);
-		
-		// Get list of files and folders from JCR
-		String location = (":" + path + File.separator + solution + ":").replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":");
-		Collection<String> repoFiles = Repository.getRepoFiles(location).getItemsList();
-
-		// Get list of files and folders from Filesystem
-		Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
-		Collection<String> _localFiles = Repository.addPrefix(path, localFiles);
-
-		// Get excluded list
-		Collection<String> excludeList = Repository.excludeByRegex( _localFiles, PluginConfig.props.getProperty("import.exclude.list") );
-		for (String item : excludeList) {
+		try
+		{
+			// Define full solution path
+			String _PATH = solution + File.separator;
+			String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(_PATH);
 			
-			returnList.getExclude().add(item);
-			
-		}
-		
-		// Get list of files to be deleted
-		Collection<String> deleteList = Repository.getDiff(repoFiles, _localFiles);
-		
-		for (String item : deleteList) 
-		{
-			returnList.getDelete().add(item);
-		}
-		
-		// Get list of files to be updated
-		Collection<String> updateList = Repository.getDiff(repoFiles, deleteList);
-		
-		for (String item : updateList) 
-		{
-			returnList.getUpdate().add(item);
-		}
-
-		// Get list of files to be created
-		updateList.add(location.substring(0,location.length()-1));
-		Collection<String> createList = Repository.getDiff( Repository.getDiff(_localFiles, excludeList), updateList );
-
-		for (String item : createList) 
-		{
-			returnList.getCreate().add(item);
-		}
-
-		
+			// Get list of files and folders from JCR
+			String location = (":" + path + File.separator + solution + ":").replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":");
+			Collection<String> repoFiles = Repository.getRepoFiles(location).getItemsList();
 	
-		returnList.setError(false);
-		returnList.setMessage("Synchronize to JCR from FileSystem.");
+			// Get list of files and folders from Filesystem
+			Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
+			Collection<String> _localFiles = Repository.addPrefix(path, localFiles);
+	
+			// Get excluded list
+			Collection<String> excludeList = Repository.excludeByRegex( _localFiles, PluginConfig.props.getProperty("import.exclude.list") );
+			for (String item : excludeList) {
+				
+				returnList.getExclude().add(item);
+				
+			}
+			
+			// Get list of files to be deleted
+			Collection<String> deleteList = Repository.getDiff(repoFiles, _localFiles);
+			
+			for (String item : deleteList) 
+			{
+				returnList.getDelete().add(item);
+			}
+			
+			// Get list of files to be updated
+			Collection<String> updateList = Repository.getDiff(repoFiles, deleteList);
+			
+			for (String item : updateList) 
+			{
+				returnList.getUpdate().add(item);
+			}
+	
+			// Get list of files to be created
+			updateList.add(location.substring(0,location.length()-1));
+			Collection<String> createList = Repository.getDiff( Repository.getDiff(_localFiles, excludeList), updateList );
+	
+			for (String item : createList) 
+			{
+				returnList.getCreate().add(item);
+			}
+		
+			returnList.setError(false);
+			returnList.setMessage("Synchronize to JCR from FileSystem.");
+	
+		}
+    	catch( UnifiedRepositoryAccessDeniedException e ) {
+    		returnList.setError(true);
+    		returnList.setError_message(e.getMessage());
+    		returnList.setMessage("FastSync: Access denied. Check folder permissions.");
+			e.printStackTrace();
+    	}
+		catch ( CannotCreateTransactionException e ) 
+		{
+			returnList.setError(true);
+			returnList.setError_message(e.getMessage());
+			returnList.setMessage("FastSync: Access denied for anonymous user.");
+			e.printStackTrace();
+		} 
+		catch (Exception e)
+		{
+			returnList.setError(true);
+			returnList.setError_message(e.getMessage());
+			returnList.setMessage("FastSync: Internal Server Error");
+			e.printStackTrace();
+		}
 		
 		return returnList;
 	}

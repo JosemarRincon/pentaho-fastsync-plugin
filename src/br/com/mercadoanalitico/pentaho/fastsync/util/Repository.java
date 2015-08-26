@@ -104,11 +104,13 @@ public class Repository {
 	}
 	
 	// Get folders and files from filesystem
-	public static Collection<String> getLocalFiles(String location) 
+	public static Collection<String> getLocalFiles(String location) throws Exception
 	{
 		Collection<String> ret = new ArrayList<String>();
 		
 		Collection<File> localFiles = Search.searchFileAndDirsRecursive(location);
+		
+		if (localFiles == null) throw new Exception("Solution not found in the pentaho-solution folder.");
 		
 		for (File localFile : localFiles) 
 		{
@@ -120,7 +122,7 @@ public class Repository {
 	}
 	
 	// Get a list of files and folders to be delete in the JCR
-	public static String getDeleteList(String root, String location, String solutionFullPath, boolean debug)
+	public static String getDeleteList(String root, String location, String solutionFullPath, boolean debug) throws Exception
 	{
 		// Get Repository items and ids
 		Repo repo = getRepoFiles(location);
