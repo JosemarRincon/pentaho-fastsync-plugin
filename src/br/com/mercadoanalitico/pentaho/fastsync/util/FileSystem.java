@@ -1,5 +1,6 @@
 package br.com.mercadoanalitico.pentaho.fastsync.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -10,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -55,7 +55,7 @@ public class FileSystem {
 
 		// Se foi criado um arquivo temporario, apagar
 		if (fileTemp != null) {
-			boolean successDel = deleteFile(newName + ".tmp");
+			deleteFile(newName + ".tmp");
 		}
 
 		return true;
@@ -77,7 +77,18 @@ public class FileSystem {
 
 		return true;
 	}
-	
+
+	public static boolean deleteFile(File fileName) {
+
+		boolean success = fileName.delete();
+
+		if (!success) {
+			return false;
+		}
+
+		return true;
+	}
+
 	/**
 	 * Deletar um diretorio
 	 * 
@@ -227,24 +238,61 @@ public class FileSystem {
 	
 	public static void writeToFile(InputStream inputStream, String directory, String fileName) throws Exception 
 	{
-		File dir = new File(directory);
-		if (!dir.exists()) dir.mkdirs();
-		
-		File file = new File(directory + File.separator + fileName);
-		file.createNewFile();
-		
-		OutputStream out = new FileOutputStream(file);
-		int read = 0;
-		byte[] bytes = new byte[1024];
-		while ((read = inputStream.read(bytes)) != -1) 
+		OutputStream out = null;
+
+		try
 		{
-			out.write(bytes, 0, read);
+			File dir = new File(directory);
+			if (!dir.exists()) dir.mkdirs();
+
+			File file = new File(directory + File.separator + fileName);
+			file.createNewFile();
+
+			out = new FileOutputStream(file);
+
+			int read = 0;
+			byte[] bytes = new byte[1024];
+			while ((read = inputStream.read(bytes)) != -1) 
+			{
+				out.write(bytes, 0, read);
+			}
+			
+		} finally {
+			out.flush();
+			out.close();
 		}
-		
-		out.flush();
-		out.close();
 	}
-	
+
+	public static void writeToFile(ByteArrayOutputStream outputStream, String directory, String fileName) throws Exception 
+	{
+		FileOutputStream fop = null;
+		File file;
+
+		try {
+
+			file = new File(directory + File.separator + fileName);
+			fop = new FileOutputStream(file);
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			// get the content in bytes
+			byte[] contentInBytes = outputStream.toByteArray();
+
+			fop.write(contentInBytes);
+			fop.flush();
+			fop.close();
+
+			System.out.println("Done");
+
+		} finally {
+			if (fop != null)
+				fop.close();
+		}
+	}
+
 	public static String getTmpDir(String location) 
 	{
 		String tmpDir = System.getProperty( "java.io.tmpdir" ) + File.separator + location;

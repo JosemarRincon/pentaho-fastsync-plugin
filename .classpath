@@ -354,5 +354,6 @@
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/tomcat/webapps/pentaho/WEB-INF/lib/xstream-1.4.2.jar"/>
 	<classpathentry kind="lib" path="lib/oncase-biserver-url-exposer-0.1.0.jar"/>
 	<classpathentry kind="lib" path="D:/BI_5_4_0/biserver-ce-5.4.0.0-128/biserver-ce/pentaho-solutions/system/data-access/lib/pentaho-bi-platform-data-access-5.4.0.0-128.jar" sourcepath="/pentaho5-data-access"/>
+	<classpathentry kind="lib" path="lib/zt-zip-1.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -9,7 +9,7 @@ angular.module('app').factory('pentahoService', function($http) {
 	};
 
 	pentahoFactory.syncJcr = function(solution, path, del, delPerm, debug) {
-		return $http.get("/pentaho/plugin/fastsync/api/sync?solution=" + solution + "&path=" + path + "&delete=" + del + "&deletePerm=" + delPerm + "&debug=" + debug);
+		return $http.get("/pentaho/plugin/fastsync/api/sync/jcr?solution=" + solution + "&path=" + path + "&delete=" + del + "&deletePerm=" + delPerm + "&debug=" + debug);
 	};
 
 	// return our entire pentahoFactory object

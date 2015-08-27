@@ -1,7 +1,9 @@
 package br.com.mercadoanalitico.pentaho.fastsync.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,7 +24,9 @@ import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDenie
 import org.pentaho.platform.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.web.http.api.resources.RepositoryImportResource;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
+import org.zeroturnaround.zip.ZipUtil;
 
+import br.com.mercadoanalitico.pentaho.fastsync.engine.PluginConfig;
 import br.com.mercadoanalitico.pentaho.fastsync.models.Repo;
 
 import com.sun.jersey.core.header.FormDataContentDisposition;
@@ -157,6 +161,51 @@ public class Repository {
 		return StringUtils.join(deleteList.toArray(), ",");
 	}
 
+	// Get a list of files and folders to be delete in the FS
+	public static String getDeleteFsList(String root, String location, String solutionFullPath, boolean debug) throws Exception
+	{
+		String base = root.replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":");
+		
+		// Get Repository items and ids
+		Repo repo = getRepoFiles(location);
+
+		// Get list of files and folders from JCR
+		Collection<String> _repoFiles = repo.getItemsList();
+		Collection<String> repoFiles = new ArrayList<String>() ;
+
+		for (String item : _repoFiles) 
+		{
+			repoFiles.add( StringUtils.removeStart(item, base) );
+		}
+		
+		// Get list of files and folders from Filesystem
+		Collection<String> localFiles = getLocalFiles(solutionFullPath);
+		
+		localFiles.remove( StringUtils.removeStart(location, base) );
+		
+		if (debug) System.out.println("\n----->  repoFiles: " + repoFiles + "\n");
+		if (debug) System.out.println("\n-----> localFiles: " + localFiles + "\n");
+
+		List<String> deleteList = new ArrayList<String>();
+		
+		Collection<String> diffList = getDiff(localFiles, repoFiles);
+		
+		if (debug) System.out.println("\n-----> diffList: " + diffList + "\n");
+
+		for (String item : diffList) 
+		{
+			deleteList.add(item);
+		}
+		
+		// Reverse order to delete files before their parent folder
+		Collections.reverse(deleteList);
+		
+		// Get excluded items
+		Collection<String> excludeList = excludeByRegex( deleteList, PluginConfig.props.getProperty("import.exclude.list") );
+
+		return StringUtils.join( getDiff(deleteList, excludeList).toArray(), "," );
+	}
+
 	public static Collection<String> addPrefix(String root, Collection<String> collection) 
 	{
 		Collection<String> ret = new ArrayList<String>();
@@ -177,6 +226,20 @@ public class Repository {
 		if (perm) fileService.doDeleteFilesPermanent(deleteList);
 		else fileService.doDeleteFiles(deleteList);
 		
+	}
+
+	public static void deleteItemsFs(String solutionPath, String deleteList) throws IOException
+	{
+		for (String token : deleteList.split(",") ) 
+		{ 
+			File item = new File(solutionPath + "/" + token.replaceAll(":", "/") );
+			
+			if ( item.isFile() )
+				FileSystem.deleteFile(item);
+			else
+				FileSystem.deleteFolder(item);
+			
+		}
 	}
 
 	public static void importFileToJcr(String location, String zipFile, String debug) throws Exception 
@@ -213,6 +276,28 @@ public class Repository {
 			input.close();
 		}
  	}
+	
+	public static void exportFileToFs(String userAgent, String location, String withManifest, String tmpDir, String folder) throws Throwable 
+	{
+		if ( fileService == null) 
+			fileService = new FileService();
+
+		// Get zip file from JCR
+		FileService.DownloadFileWrapper wrapper = null;
+			wrapper = fileService.doGetFileOrDirAsDownload( userAgent, location, withManifest );
+	
+		// Convert StreamingOutput to ByteArrayOutputStream
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		wrapper.getOutputStream().write(out);
+
+		// Save zip file to filesystem
+		String filename = wrapper.getEncodedFileName();
+		FileSystem.writeToFile( out, tmpDir, filename );
+
+		// Unzip File
+		String zipFile = (tmpDir + "/" + filename);
+		ZipUtil.unpack(new File(zipFile), new File(folder));
+	}
 
 	public static Collection<String> excludeByRegex( Collection<String> list, String regexFilterList) {
 		

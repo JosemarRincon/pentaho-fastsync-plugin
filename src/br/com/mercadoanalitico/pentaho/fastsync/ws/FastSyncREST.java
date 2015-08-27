@@ -17,11 +17,14 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.lang.StringUtils;
 import org.pentaho.platform.api.engine.PentahoAccessControlException;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.dataaccess.datasource.api.AnalysisService;
@@ -55,7 +58,6 @@ public class FastSyncREST {
 	 * 		- Publish Content or Administer Security
 	 * 
 	 */
-	@SuppressWarnings("unchecked")
 	@GET
 	@Path("/publish")
 	@Produces("application/json")
@@ -136,7 +138,6 @@ public class FastSyncREST {
 				}
 			}
 
-			
 			// Define full schema path
 			String _PATH = solution + File.separator;
 			if ( !("".equalsIgnoreCase(path)) && path != null )
@@ -221,20 +222,83 @@ public class FastSyncREST {
 			
 	}
 
+	public void syncJcr(String solution, String path, String delete, String deletePerm, String debug, Output output, String tmpDir) throws Exception 
+	{
+		File dstDir;
+		
+		// Define full solution path
+		String _PATH = solution + File.separator;
+		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(_PATH);
+		
+		if ( "True".equalsIgnoreCase(delete) ) 
+		{
+			String location = path + File.separator + solution;
+			String deleteList = Repository.getDeleteList(path, location, solutionFullPath, "True".equalsIgnoreCase(debug) );
+			
+			if (deleteList.length() > 0 ) 
+				Repository.deleteItems( deleteList, "True".equalsIgnoreCase(deletePerm) );
+		}
+
+		// Copy solution to tmpFolder
+        dstDir = new File(tmpDir + File.separator + solution + File.separator + path + File.separator + solution + File.separator);
+        
+        FileSystem.copyDirectory( new File(solutionFullPath), dstDir, PluginConfig.props.getProperty("import.exclude.list") );
+		
+        // Pack solution
+        Zip zipPack = new Zip();
+
+        tmpDir = FileSystem.getTmpDir(solution);
+        String fullZipName = tmpDir + File.separator + solution + ".zip";
+        
+        zipPack.setFullPathZipFileName(fullZipName);
+        zipPack.setPackDirectoryPath((tmpDir + File.separator + solution).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
+        zipPack.packDirectory();
+
+        // Load solution zip file to JCR
+        Repository.importFileToJcr(tmpDir, fullZipName, debug);
+        
+		output.setError(false);
+		output.setMessage("Successful synchronize to JCR from FileSystem.");
+		
+	}
+	
+	public void syncFs(String solution, String path, String delete, String debug, Output output, String tmpDir, String userAgent, String withManifest) throws Throwable 
+	{
+		// Define Solution Path
+		String solutionPath = ( PentahoSystem.getApplicationContext().getSolutionPath("") ).replaceAll("\\\\+", "/").replaceAll("/+", "/");
+
+		// Define JCR base path
+		String location = (":" + path + ":" + solution).replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":");
+		location = StringUtils.removeEnd(location, ":");
+
+		// Delete files/folder from FileSystem
+		if ( "True".equalsIgnoreCase(delete) ) 
+		{
+			String deleteList = Repository.getDeleteFsList(path, location, (solutionPath + "/" + solution), "True".equalsIgnoreCase(debug) );
+			
+			if (deleteList.length() > 0 ) 
+				Repository.deleteItemsFs( solutionPath, deleteList );
+		}
+
+		// Save solution to filesystem
+		Repository.exportFileToFs( userAgent, location, withManifest, tmpDir, solutionPath);
+		
+		output.setError(false);
+		output.setMessage("Successful synchronize to FileSystem from JCR.");
+	}
 	
 	/*
 	 * 
-	 * Permissions needed to publish a new schema:
+	 * Permissions needed to sync a solution
 	 * 		- Create Content
 	 * 		- Publish Content or Administer Security
 	 *		- Folders Write Permission
 	 *  
 	 */
-	@SuppressWarnings("unchecked")
 	@GET
-	@Path("/sync")
+	@Path("/sync/{id}")
 	@Produces("application/json")
-	public Output syncSolution ( @Context UriInfo info ) 
+	public Output syncSolution ( @Context UriInfo info, @HeaderParam ( "user-agent" ) String userAgent, @PathParam ( "id" ) String id ) 
 	{
 		// For simple CORS requests, the server only needs to add these 2 header parameters that allow access to any client.
 		response.setHeader("Access-Control-Allow-Origin", "*");
@@ -243,7 +307,6 @@ public class FastSyncREST {
 		Output output = new Output();
 		
 		String tmpDir = "";
-		File dstDir;
 		
 		Map<String, Object> ret = null;
 
@@ -253,6 +316,9 @@ public class FastSyncREST {
 			String deletePerm = info.getQueryParameters().getFirst("deletePerm");	// Permanently deletes the selected list of files from the repository
 			String debug = info.getQueryParameters().getFirst("debug");
 
+			String _withManifest = info.getQueryParameters().getFirst("withManifest");
+			String withManifest = ( "true".equalsIgnoreCase(_withManifest) ? "true" : "false" );
+			
 			// Get Auth Query Parameters
 			String myType = "";
 			myType = info.getQueryParameters().getFirst("type");
@@ -280,7 +346,7 @@ public class FastSyncREST {
 			
 			// Parameters to synchronize a solution
 			String solution = info.getQueryParameters().getFirst("solution");	// Relative to the pentaho-solution folder
-			if ( "".equalsIgnoreCase(solution) || solution == null )
+			if ( StringUtils.isBlank(solution) )
 			{
 				output.setError(true);
 				output.setError_message("FastSync: Missing parameter.");
@@ -296,47 +362,35 @@ public class FastSyncREST {
 			}
 
 			// Get path parameter
-			String path = info.getQueryParameters().getFirst("path").toLowerCase();	// Relative to the PUC Browser files
-			if ( "".equalsIgnoreCase(path) || path == null )
+			String path = info.getQueryParameters().getFirst("path");	// Relative to the PUC Browser files
+			
+			if (path != null)
+				path = path.toLowerCase();
+			
+			if ( StringUtils.isBlank(path) )
 			{
 				path = "public";
 			} 
 			
-			// Define full solution path
-			String _PATH = solution + File.separator;
-			String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(_PATH);
+			// Define tmpDir
+	        tmpDir = (FileSystem.getTmpDir(solution)).replaceAll("\\\\+", "/").replaceAll("/+", "/");
 			
-			if ( "True".equalsIgnoreCase(delete) ) 
-			{
-				String location = path + File.separator + solution;
-				String deleteList = Repository.getDeleteList(path, location, solutionFullPath, "True".equalsIgnoreCase(debug) );
-				
-				if (deleteList.length() > 0 ) 
-					Repository.deleteItems( deleteList, "True".equalsIgnoreCase(deletePerm) );
-			}
-
-			// Copy solution to tmpFolder
-            tmpDir = FileSystem.getTmpDir(solution);
-            dstDir = new File(tmpDir + File.separator + solution + File.separator + path + File.separator + solution + File.separator);
-            
-            FileSystem.copyDirectory( new File(solutionFullPath), dstDir, PluginConfig.props.getProperty("import.exclude.list") );
-			
-            // Pack solution
-            Zip zipPack = new Zip();
-
-            tmpDir = FileSystem.getTmpDir(solution);
-            String fullZipName = tmpDir + File.separator + solution + ".zip";
-            
-            zipPack.setFullPathZipFileName(fullZipName);
-            zipPack.setPackDirectoryPath((tmpDir + File.separator + solution).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
-            zipPack.packDirectory();
-
-            // Load solution zip file to JCR
-            Repository.importFileToJcr(tmpDir, fullZipName, debug);
-            
-			output.setError(false);
-			output.setMessage("Successful synchronize to JCR from FileSystem.");
-			
+	        // Call sync
+	        if ( "jcr".equalsIgnoreCase(id) )
+	        {
+	        	syncJcr(solution, path, delete, deletePerm, debug, output, tmpDir);
+	        }
+	        else if ( "fs".equalsIgnoreCase(id) )
+	        {
+	        	syncFs(solution, path, delete, debug, output, tmpDir, userAgent, withManifest);
+	        }
+	        else
+	        {
+				output.setError(true);
+				output.setError_message("FastSync: Invalid URL.");
+				output.setMessage("/sync/" + id + " not defined.");
+	        }
+	        
 		}
     	catch( PentahoAccessControlException e ) {
 			output.setError(true);
@@ -364,7 +418,21 @@ public class FastSyncREST {
 			output.setMessage("FastSync: Access denied for anonymous user.");
 			e.printStackTrace();
 		} 
+		catch (FileNotFoundException e)
+		{
+			output.setError(true);
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Internal Server Error");
+			e.printStackTrace();
+		}
 		catch (Exception e)
+		{
+			output.setError(true);
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Internal Server Error");
+			e.printStackTrace();
+		}
+		catch (Throwable e)
 		{
 			output.setError(true);
 			output.setError_message(e.getMessage());
@@ -397,7 +465,6 @@ public class FastSyncREST {
 		return output;
 	}
 	
-	@SuppressWarnings("unchecked")
 	@GET
 	@Path("/sync/list/jcr")
 	@Produces("application/json")
