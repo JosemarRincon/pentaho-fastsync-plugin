@@ -11,18 +11,31 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	
 	$scope.showFlag = false;
 	
-	$scope.form = [];
-	$scope.form.checkboxModel = {
-		'delete': true,
-		'deletePerm': true,
-		'debug': false
+//	$scope.form = [];
+	$scope.form = {
+		checkboxModel: {
+			jcr: {
+				'delete': false,
+				'deletePerm': true,
+				'debug': false
+			},
+			fs: {
+				'delete': false,
+				'manifest': false,
+				'debug': false
+			}
+		}
 	};
 
-	$scope.getJcrList = function (solution, path) {
+	$scope.getList = function (switchFlag, solution, path) {
 
 		$scope.loading = true;
 		
-		pentahoService.getJcrList(solution, path).success(function (data) {
+		var api = "fs";
+		
+		if (switchFlag) api = "jcr";
+		
+		pentahoService.getList(api, solution, path).success(function (data) {
 			if (data.error == 'false') 
 			{
 				if (typeof data.create === "string") {
@@ -72,15 +85,19 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 		});
 	};
 
-	$scope.syncJcr = function (solution, path, del, delPerm, debug) {
+	$scope.sync = function (switchFlag, solution, path, del, delPerm, debug) {
 
 		$scope.loading = true;
+		
+		var api = "fs";
+		
+		if (switchFlag) api = "jcr";
 
-		pentahoService.syncJcr(solution, path, del, delPerm, debug).success(function (data) {
+		pentahoService.sync(api, solution, path, del, delPerm, debug).success(function (data) {
 			if (data.error == 'false') 
 			{
 				setMessageAlert(data.message, data.error);
-				$scope.getJcrList(solution, path);
+				$scope.getList(api, solution, path);
 			}
 			else
 			{
@@ -92,7 +109,8 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 		
 		}).finally(function() {
 			$scope.loading = false;
-		});				};
+		});				
+	};
 	
 	$scope.collapse = {};
 	$scope.collapse.cr = "collapse";
