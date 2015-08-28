@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
@@ -465,16 +466,127 @@ public class FastSyncREST {
 		return output;
 	}
 	
+	public void listJcr(String solution, String path, List returnList) throws Exception 
+	{
+		// Define full solution path
+		String _PATH = solution + File.separator;
+		String solutionFullPath = (PentahoSystem.getApplicationContext().getSolutionPath(_PATH)).replaceAll("\\\\+", "/").replaceAll("/+", "/");;
+		
+		// Get list of files and folders from JCR
+		String location = (":" + path + File.separator + solution + ":").replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":");
+		Collection<String> repoFiles = Repository.getRepoFiles(location).getItemsList();
+
+		// Get list of files and folders from Filesystem
+		Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
+		Collection<String> _localFiles = Repository.addPrefix(path, localFiles);
+
+		// Get excluded list
+		Collection<String> excludeList = Repository.excludeByRegex( _localFiles, PluginConfig.props.getProperty("import.exclude.list") );
+		for (String item : excludeList) {
+			
+			returnList.getExclude().add(item);
+			
+		}
+		
+		// Get list of files to be deleted
+		Collection<String> deleteList = Repository.getDiff(repoFiles, _localFiles);
+		
+		for (String item : deleteList) 
+		{
+			returnList.getDelete().add(item);
+		}
+		
+		// Get list of files to be updated
+		Collection<String> updateList = Repository.getDiff(repoFiles, deleteList);
+		
+		for (String item : updateList) 
+		{
+			returnList.getUpdate().add(item);
+		}
+
+		// Get list of files to be created
+		updateList.add(location.substring(0,location.length()-1));
+		Collection<String> createList = Repository.getDiff( Repository.getDiff(_localFiles, excludeList), updateList );
+
+		for (String item : createList) 
+		{
+			returnList.getCreate().add(item);
+		}
+		
+	}
+
+	public void listFs(String solution, String path, List returnList) throws Exception 
+	{
+		String base = path.replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":");
+		base = ":".equals(base) ? "" : base;
+
+		
+		// Define Solution Path
+		String solutionFullPath = ( PentahoSystem.getApplicationContext().getSolutionPath(solution) ).replaceAll("\\\\+", "/").replaceAll("/+", "/");
+		
+		// Define JCR base path
+		String location = (":" + path + ":" + solution).replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":");
+		location = StringUtils.removeEnd(location, ":");
+		
+		Repository.checkIfJcrPathExists(location);
+		
+		// Get list of files and folders from JCR
+		Collection<String> _repoFiles = Repository.getRepoFiles(location).getItemsList();
+		Collection<String> repoFiles = new ArrayList<String>() ;
+
+		for (String item : _repoFiles) 
+		{
+			repoFiles.add( StringUtils.removeStart(item, base) );
+		}
+		
+		// Get list of files and folders from Filesystem
+		Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
+		
+		localFiles.remove( StringUtils.removeStart(location, base) );
+		
+		// Get diff itens from JCR e FS
+		Collection<String> _deleteList = Repository.getDiff(localFiles, repoFiles);
+		
+		// Get excluded list
+		Collection<String> excludeList = Repository.excludeByRegex( localFiles, PluginConfig.props.getProperty("import.exclude.list") );
+		for (String item : excludeList) 
+		{
+			returnList.getExclude().add( item.replaceAll(":", "/") );
+		}
+		
+		// Get list of files to be deleted
+		Collection<String> deleteList = Repository.getDiff(_deleteList, excludeList);
+		for (String item : deleteList) 
+		{
+			returnList.getDelete().add( item.replaceAll(":", "/") );
+		}
+		
+		// Get list of files to be created
+		Collection<String> createList = Repository.getDiff(repoFiles, localFiles);
+		for (String item : createList) 
+		{
+			returnList.getCreate().add( item.replaceAll(":", "/") );
+		}
+		
+		// Get list of files to be updated
+		Collection<String> updateList = Repository.getDiff( Repository.getDiff(localFiles, excludeList), deleteList );
+		for (String item : updateList) 
+		{
+			returnList.getUpdate().add( item.replaceAll(":", "/") );
+		}
+
+	}
+	
 	@GET
-	@Path("/sync/list/jcr")
+	@Path("/sync/list/{id}")
 	@Produces("application/json")
-	public List listSyncJcr ( @Context UriInfo info ) 
+	public List listSyncJcr ( @Context UriInfo info, @PathParam ( "id" ) String id ) 
 	{
 		List returnList = new List();
 		
 		// Parameters to synchronize a solution
 		String solution = info.getQueryParameters().getFirst("solution");	// Relative to the pentaho-solution folder
-		if ( "".equalsIgnoreCase(solution) || solution == null )
+		if ( StringUtils.isBlank(solution) )
 		{
 			returnList.setError(true);
 			returnList.setError_message("FastSync: Missing parameter.");
@@ -490,59 +602,35 @@ public class FastSyncREST {
 		}
 
 		// Get path parameter
-		String path = info.getQueryParameters().getFirst("path").toLowerCase();	// Relative to the PUC Browser files
-		if ( "".equalsIgnoreCase(path) || path == null )
+		String path = info.getQueryParameters().getFirst("path");	// Relative to the PUC Browser files
+		
+		if (path != null)
+			path = path.toLowerCase();
+		
+		if ( StringUtils.isBlank(path) )
 		{
 			path = "public";
 		} 
 		
 		try
 		{
-			// Define full solution path
-			String _PATH = solution + File.separator;
-			String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(_PATH);
 			
-			// Get list of files and folders from JCR
-			String location = (":" + path + File.separator + solution + ":").replaceAll("/+", ":").replaceAll("\\\\+", ":").replaceAll(":+", ":");
-			Collection<String> repoFiles = Repository.getRepoFiles(location).getItemsList();
-	
-			// Get list of files and folders from Filesystem
-			Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
-			Collection<String> _localFiles = Repository.addPrefix(path, localFiles);
-	
-			// Get excluded list
-			Collection<String> excludeList = Repository.excludeByRegex( _localFiles, PluginConfig.props.getProperty("import.exclude.list") );
-			for (String item : excludeList) {
-				
-				returnList.getExclude().add(item);
-				
-			}
+	        // Call list
+	        if ( "jcr".equalsIgnoreCase(id) )
+	        {
+				listJcr(solution, path, returnList);
+	        }
+	        else if ( "fs".equalsIgnoreCase(id) )
+	        {
+				listFs(solution, path, returnList);
+	        }
+	        else
+	        {
+	        	returnList.setError(true);
+	        	returnList.setError_message("FastSync: Invalid URL.");
+	        	returnList.setMessage("/sync/list/" + id + " not defined.");
+	        }
 			
-			// Get list of files to be deleted
-			Collection<String> deleteList = Repository.getDiff(repoFiles, _localFiles);
-			
-			for (String item : deleteList) 
-			{
-				returnList.getDelete().add(item);
-			}
-			
-			// Get list of files to be updated
-			Collection<String> updateList = Repository.getDiff(repoFiles, deleteList);
-			
-			for (String item : updateList) 
-			{
-				returnList.getUpdate().add(item);
-			}
-	
-			// Get list of files to be created
-			updateList.add(location.substring(0,location.length()-1));
-			Collection<String> createList = Repository.getDiff( Repository.getDiff(_localFiles, excludeList), updateList );
-	
-			for (String item : createList) 
-			{
-				returnList.getCreate().add(item);
-			}
-		
 			returnList.setError(false);
 			returnList.setMessage("Synchronize to JCR from FileSystem.");
 	

@@ -3,6 +3,7 @@ package br.com.mercadoanalitico.pentaho.fastsync.util;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -277,14 +278,21 @@ public class Repository {
 		}
  	}
 	
-	public static void exportFileToFs(String userAgent, String location, String withManifest, String tmpDir, String folder) throws Throwable 
+	public static void exportFileToFs(String userAgent, String location, String withManifest, String tmpDir, String folder) throws Exception, IOException   
 	{
 		if ( fileService == null) 
 			fileService = new FileService();
 
 		// Get zip file from JCR
 		FileService.DownloadFileWrapper wrapper = null;
+		try {
 			wrapper = fileService.doGetFileOrDirAsDownload( userAgent, location, withManifest );
+		} 
+		catch (Throwable e) {
+			if (e instanceof FileNotFoundException) {
+				throw new Exception("JCR path '" + location + "' not found.");
+			}
+		}
 	
 		// Convert StreamingOutput to ByteArrayOutputStream
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -322,5 +330,26 @@ public class Repository {
 		}
 
 		return excludeList;
+	}
+	
+
+	public static void checkIfJcrPathExists(String location) throws Exception 
+	{
+		location = location.replaceAll("/+", ":").replaceAll("\\\\+", ":") + ":";
+		location = location.replaceAll(":+", ":");
+
+		if ( fileService == null) 
+			fileService = new FileService();
+		
+		try 
+		{
+			fileService.doGetProperties(location);
+		}
+		catch (FileNotFoundException e) 
+		{
+			throw new Exception("JCR path '" + location + "' not found.");
+		}
+
+		
 	}
 }
