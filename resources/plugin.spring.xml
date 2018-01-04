@@ -12,7 +12,7 @@
     <context:annotation-config/>
     
     
-    <!-- URL Exposer -->
+    <!-- URL Exposer 
 	<bean class="oncas.biserver.security.helper.URLExposer">
     	<property name="filterChainUrlPattern" value="/plugin/fastsync/api/**" />
       	<property name="interceptorDefifnintion">
@@ -25,16 +25,16 @@ CONVERT_URL_TO_LOWERCASE_BEFORE_COMPARISON
         	</value>
       	</property>
     </bean>
-    
+    -->
     <!-- REST resources -->
     <bean id="api" class="org.pentaho.platform.web.servlet.JAXRSPluginServlet"/>
-    <bean id="fastsync.api" class="br.com.mercadoanalitico.pentaho.fastsync.ws.FastSyncREST"/>
+    <bean id="fastsync.api" class="br.gov.go.saude.pentaho.fastsync.ws.FastSyncREST"/>
     
     <!-- Plugin init process by BeanFactoryPostProcessor -->
-	<bean class="org.pentaho.platform.engine.core.system.objfac.spring.ApplicationContextPentahoSystemRegisterer" scope="singleton"/>
-    <bean id="FastSyncTemplateFactory" class="br.com.mercadoanalitico.pentaho.fastsync.engine.FastSyncTemplateFactory">
+	<bean class="org.pentaho.platform.engine.core.system.objfac.spring.ApplicationContextPentahoSystemRegisterer" />
+    <bean id="FastSyncTemplateFactory" class="br.gov.go.saude.pentaho.fastsync.engine.FastSyncTemplateFactory">
     	<pen:publish as-type="CLASSES">
       	</pen:publish>
-	</bean>
+	 </bean>
 
 </beans>

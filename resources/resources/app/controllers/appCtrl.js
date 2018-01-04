@@ -1,9 +1,10 @@
 angular.module('app').controller("appCtrl", function ($scope, $http, pentahoService) { 
 
-	$scope.exclude = [];
-	$scope.create = [];
-	$scope.update = [];
-	$scope.delete = [];
+	$scope.exclude  = [];
+	$scope.create   = [];
+	$scope.update   = [];
+	$scope.delete   = [];
+	$scope.preserve = [];
 	
 	$scope.messageAlert;
 	
@@ -11,7 +12,6 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	
 	$scope.showFlag = false;
 	
-//	$scope.form = [];
 	$scope.form = {
 		checkboxModel: {
 			jcr: {
@@ -23,11 +23,12 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 				'delete': false,
 				'manifest': false,
 				'debug': false
-			}
+			},
+			'keep': true
 		}
 	};
 
-	$scope.getList = function (switchFlag, solution, path) {
+	$scope.getList = function (switchFlag, solution, path, keepFlag, debug) {
 
 		$scope.loading = true;
 		
@@ -35,7 +36,7 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 		
 		if (switchFlag) api = "jcr";
 		
-		pentahoService.getList(api, solution, path).success(function (data) {
+		pentahoService.getList(api, solution, path, keepFlag, debug).success(function (data) {
 			if (data.error == 'false') 
 			{
 				if (typeof data.create === "string") {
@@ -59,15 +60,23 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 					data.exclude = x;
 				}
 			
-				$scope.exclude = data.exclude;
-				$scope.create  = data.create;
-				$scope.update  = data.update;
-				$scope.delete  = data.delete;
+				if (typeof data.preserve === "string") {
+					var x = [];
+					x.push(data.preserve);
+					data.preserve = x;
+				}
 
-				$scope.excludeSize = (data.exclude == undefined) ? 0 : data.exclude.length;
-				$scope.createSize  = (data.create  == undefined) ? 0 : data.create.length;
-				$scope.updateSize  = (data.update  == undefined) ? 0 : data.update.length;
-				$scope.deleteSize  = (data.delete  == undefined) ? 0 : data.delete.length;
+				$scope.exclude  = data.exclude;
+				$scope.create   = data.create;
+				$scope.update   = data.update;
+				$scope.delete   = data.delete;
+				$scope.preserve = data.preserve;
+
+				$scope.excludeSize  = (data.exclude == undefined) ? 0 : data.exclude.length;
+				$scope.createSize   = (data.create  == undefined) ? 0 : data.create.length;
+				$scope.updateSize   = (data.update  == undefined) ? 0 : data.update.length;
+				$scope.deleteSize   = (data.delete  == undefined) ? 0 : data.delete.length;
+				$scope.preserveSize = (data.preserve  == undefined) ? 0 : data.preserve.length;
 				
 				$scope.showFlag = true;
 			}
@@ -85,7 +94,7 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 		});
 	};
 
-	$scope.sync = function (switchFlag, solution, path, del, delPerm, debug) {
+	$scope.sync = function (switchFlag, solution, path, del, delPerm, debug, keepFlag) {
 
 		$scope.loading = true;
 		
@@ -93,11 +102,11 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 		
 		if (switchFlag) api = "jcr";
 
-		pentahoService.sync(api, solution, path, del, delPerm, debug).success(function (data) {
+		pentahoService.sync(api, solution, path, del, delPerm, debug, keepFlag).success(function (data) {
 			if (data.error == 'false') 
 			{
 				setMessageAlert(data.message, data.error);
-				$scope.getList(api, solution, path);
+				$scope.getList(switchFlag, solution, path, keepFlag,debug);
 			}
 			else
 			{
@@ -117,6 +126,7 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	$scope.collapse.de = "collapse";
 	$scope.collapse.up = "collapse";
 	$scope.collapse.ex = "collapse";
+	$scope.collapse.pr = "collapse";
 	
 	$scope.setCollapse = function(id) {
 		($scope.collapse[id].length == 0) ? ($scope.collapse[id] = "collapse") : ($scope.collapse[id] = "");
@@ -131,7 +141,7 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 		else
 			$("#message-box").addClass("alert alert-success");
 		
-		$("#message-alert").text(msg);
+		$("#message-alert").html(msg);
 
 		$("#message-box").alert();
 		$("#message-box").fadeTo(5000, 500).slideUp(500, function(){
