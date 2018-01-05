@@ -423,25 +423,20 @@ public class Repository {
 		TEMP_DIR = tmpDir;
 		FILE_NAME = filename;
 		if (Repository.DEBUG) {
-//			System.out.println("\n-----> zipFile gerado: " + zipFile + "\n");
-//			System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
-//			System.out.println("\n-----> filename: " + filename + "\n");
-//			System.out.println("\n-----> location: " + location + "\n");
+			 System.out.println("\n-----> zipFile gerado: " + zipFile + "\n");
+			 System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
+			 System.out.println("\n-----> filename: " + filename + "\n");
+			 System.out.println("\n-----> location: " + location + "\n");
 		}
 		ZipUtil.unpack(new File(zipFile), new File(tmpDir));
 
 	}
 
 	public static Collection<String> addFilesModifidied(Collection<String> fileList, String solutionPath, String base,
-			String tmpDir, String withManifest,String location) throws Throwable {
+			String tmpDir) throws Throwable {
 
 		Collection<String> updateList = new ArrayList<String>();
 		Iterator<String> i = fileList.iterator();
-		String userAgente = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36";
-		//String location = "/siconti";
-		String withManisfest = "false";
-
-		getFilesFromJcr(userAgente, location, tmpDir, withManisfest);
 
 		while (i.hasNext()) {
 			String fsFile = (String) i.next();
@@ -470,12 +465,7 @@ public class Repository {
 				} catch (Exception e) {
 					throw new Exception(e);
 				}
-				if (Repository.DEBUG) {
-					System.out.println("\n-----> solutionPath: " + solutionPath + "\n");
-					System.out.println("\n-----> fsFilePath: " + _file + "\n");
-					System.out.println("\n-----> jcrFilePath: " + _jcrFilePath + "\n");
-				}
-			}// 
+			}
 
 		}// 
 

@@ -267,7 +267,7 @@ public class FastSyncREST {
 		ReturnFileList listFiles = new ReturnFileList();
 
 		// if (keepNewerFlag) {
-		listFs(solution, path, listFiles, keepNewerFlag, tmpDir, withManifest);
+		listFs(solution, path, listFiles, keepNewerFlag, tmpDir, withManifest,userAgent);
 		// }
 
 		// Repository.exportFileToFs(userAgent, location, withManifest, tmpDir,
@@ -483,7 +483,7 @@ public class FastSyncREST {
 	}
 
 	public void listFs(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag, String tmpDir,
-			String withManifest) throws Throwable {
+			String withManifest,String userAgent) throws Throwable {
 		String base = "/".equals(path) ? "" : path;
 
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
@@ -497,7 +497,7 @@ public class FastSyncREST {
 
 		Collection<String> _repoFiles = repoMaps.getItemsList();
 		if (Repository.DEBUG) {
-			System.out.println("\n-----> repoFiles zize: " + _repoFiles.size() + "\n");
+			System.out.println("\n-----> repoFiles and folders zize: " + _repoFiles.size() + "\n");
 		}
 		Collection<String> repoFiles = new ArrayList<String>();
 
@@ -531,10 +531,12 @@ public class FastSyncREST {
 		if (Repository.DEBUG) {
 			System.out.println("\n-----> base: " + base + "\n");
 			System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
+			System.out.println("\n-----> userAgent: " + userAgent + "\n");
 		}
 
+		Repository.getFilesFromJcr(userAgent, location, tmpDir, withManifest);
 		Collection<String> updateList = Repository.addFilesModifidied(Repository.getDiff(localFiles, excludeList),
-				PentahoSystem.getApplicationContext().getSolutionPath(""), base, tmpDir, withManifest, solution);
+				PentahoSystem.getApplicationContext().getSolutionPath(""), base, tmpDir);
 
 		if (keepNewerFlag) {
 			Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
@@ -545,6 +547,7 @@ public class FastSyncREST {
 					Repository.removeFilePreservedList(item);
 				}
 			}
+			Repository.newZipForUpdate();
 
 		} else {
 			updateList = Repository.getDiff(localFiles, excludeList);
@@ -561,13 +564,13 @@ public class FastSyncREST {
 			}
 		}
 
-		Repository.newZipForUpdate();
+		
 	}
 
 	@GET
 	@Path("/sync/list/{id}")
 	@Produces({ "application/json" })
-	public ReturnFileList listSyncJcr(@Context UriInfo info, @PathParam("id") String id) {
+	public ReturnFileList listSyncJcr(@Context UriInfo info, @HeaderParam("user-agent") String userAgent, @PathParam("id") String id) {
 		ReturnFileList returnList = new ReturnFileList();
 
 		String solution = ((String) info.getQueryParameters().getFirst("solution")).replaceAll("/+", "")
@@ -579,7 +582,7 @@ public class FastSyncREST {
 
 		Repository.DEBUG = "True".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
 
-		System.out.println("\n------> debug: " + (String) info.getQueryParameters().getFirst("debug") + "\n");
+		System.out.println("\n-----> debug: " + (String) info.getQueryParameters().getFirst("debug") + "\n");
 
 		if (StringUtils.isBlank(solution)) {
 			returnList.setError(Boolean.valueOf(true));
@@ -613,7 +616,7 @@ public class FastSyncREST {
 			if ("jcr".equalsIgnoreCase(id)) {
 				listJcr(solution, path, returnList, keepNewerFlag);
 			} else if ("fs".equalsIgnoreCase(id)) {
-				listFs(solution, path, returnList, keepNewerFlag, tmpDir, withManifest);
+				listFs(solution, path, returnList, keepNewerFlag, tmpDir, withManifest,userAgent);
 			} else {
 				returnList.setError(Boolean.valueOf(true));
 				returnList.setError_message("FastSync: Invalid URL.");

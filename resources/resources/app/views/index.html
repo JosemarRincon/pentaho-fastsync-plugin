@@ -48,7 +48,7 @@
 
 	<main id="principal" class="container" ng-controller="appCtrl">
 
-	<form name="inputForm">
+	<form class="col-md-6  col-lg-12" name="inputForm">
 
 		<div class="navbar navbar-inverse">
 			<div class="container">
@@ -65,16 +65,20 @@
 			</div>
 		</div>
 
+
+
 		<div class="row">
-			<div class="col-md-3">
+			<div class="col-md-6 col-lg-4">
 				<input class="form-control" type="text" ng-model="form.solution"
-					name="solution" placeholder="Solution" ng-required="true" />
+					name="solution" placeholder="Solution Name" ng-required="true" />
+
 			</div>
-			<div class="col-md-3">
-				<input class="form-control" type="text" ng-model="form.path"
-					name="path" placeholder="Path" ng-required="true" />
-			</div>
-			<div class="col-md-2">
+
+			<!-- 			<div class="col-md-3"> -->
+			<!-- 				<input class="form-control" type="text" ng-model="form.path" -->
+			<!-- 					name="path" placeholder="Path" ng-required="true" /> -->
+			<!-- 			</div> -->
+			<div class="col-md-6 col-lg-2">
 				<button class="btn btn-primary btn-block"
 					ng-click="getList(form.switchState, form.solution, form.path, form.checkboxModel.keep,form.checkboxModel.fs.debug)"
 					ng-disabled="inputForm.$invalid">
@@ -82,7 +86,8 @@
 				</button>
 			</div>
 			<!-- Dropbox para sincronizar JCR -->
-			<div class="col-md-2" ng-show="form.switchState">
+			<div class="col-md-6 col-lg-2" ng-show="form.switchState">
+
 				<div class="dropdown">
 					<button class="btn btn-primary dropdown-toggle" type="button"
 						id="dropdownMenu1" ng-disabled="inputForm.$invalid"
@@ -105,9 +110,10 @@
 							ng-model="form.checkboxModel.keep"> Preserve Newer Files</li>
 					</ul>
 				</div>
+
 			</div>
 			<!-- Dropbox para sincronizar FS -->
-			<div class="col-md-2" ng-show="!form.switchState">
+			<div class="col-md-6 col-lg-2" ng-show="!form.switchState">
 				<div class="dropdown">
 					<button class="btn btn-primary dropdown-toggle" type="button"
 						id="dropdownMenu1" ng-disabled="inputForm.$invalid"
@@ -130,88 +136,101 @@
 					</ul>
 				</div>
 			</div>
-			<div class="col-md-2">
+			<div class="col-md-6 col-lg-2">
 				<input class="glyphicon glyphicon-star-empty" type="checkbox"
 					ng-model="form.switchState" data-on-text="Sync JCR"
 					data-on-icon="glyphicon glyphicon-ok-circle"
 					data-off-text="Sync FS" bootstrap-switch />
 			</div>
 		</div>
+
+
+		<div class="row">
+			<div class="col-lg-12">
+				<div id="message-box" class="alert alert-danger" role="alert"
+					style="display: none;">
+					<button type="button" class="close" data-dismiss="alert"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<div id="message-alert">{{messageAlert}}</div>
+				</div>
+			</div>
+			<hr />
+		</div>
+
+
+
+		<div class="spinner" ng-show="loading">
+			<img src="/pentaho/content/fastsync/resources/assets/img/spinner.gif">
+		</div>
+
+
+		<div id="menu" ng-show="showFlag">
+			<div class="panel list-group">
+				<a href="" class="list-group-item bold" ng-click="setCollapse('cr')">FILES
+					TO BE CREATED <span class="label label-info">{{createSize}}</span>
+					</span>
+				</a>
+				<div id="cr" class="sublinks {{collapse.cr}}"
+					ng-repeat="item in create">
+					<a class="list-group-item small"><span
+						class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
+				</div>
+			</div>
+
+			<div class="panel list-group">
+				<a href="" class="list-group-item bold" ng-click="setCollapse('de')">FILES
+					TO BE DELETED <span class="label label-info">{{deleteSize}}</span>
+					</span>
+				</a>
+				<div id="de" class="sublinks {{collapse.de}}"
+					ng-repeat="item in delete">
+					<a class="list-group-item small"><span
+						class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
+				</div>
+			</div>
+
+			<div class="panel list-group">
+				<a href="" class="list-group-item bold" ng-click="setCollapse('up')">FILES
+					TO BE UPDATED <span class="label label-info">{{updateSize}}</span>
+					</span>
+				</a>
+				<div id="up" class="sublinks {{collapse.up}}"
+					ng-repeat="item in update">
+					<a class="list-group-item small"><span
+						class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
+				</div>
+			</div>
+
+			<div class="panel list-group" ng-show="form.checkboxModel.keep">
+				<a href="" class="list-group-item bold" ng-click="setCollapse('pr')">PRESERVED
+					FILES <span class="label label-info">{{preserveSize}}</span> </span>
+				</a>
+				<div id="pr" class="sublinks {{collapse.pr}}"
+					ng-repeat="item in preserve">
+					<a class="list-group-item small"><span
+						class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
+				</div>
+			</div>
+
+			<div class="panel list-group">
+				<a href="" class="list-group-item bold" ng-click="setCollapse('ex')">EXCLUDED
+					FILES <span class="label label-info">{{excludeSize}}</span> </span>
+				</a>
+				<div id="ex" class="sublinks {{collapse.ex}}"
+					ng-repeat="item in exclude">
+					<a class="list-group-item small"><span
+						class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
+				</div>
+			</div>
+
+		</div>
+
 	</form>
 
-	<div id="message-box" class="alert alert-danger" role="alert"
-		style="display: none;">
-		<button type="button" class="close" data-dismiss="alert"
-			aria-label="Close">
-			<span aria-hidden="true">&times;</span>
-		</button>
-		<div id="message-alert">{{messageAlert}}</div>
-	</div>
-
-	<hr />
-
-	<div class="spinner" ng-show="loading">
-		<img src="/pentaho/content/fastsync/resources/assets/img/spinner.gif">
-	</div>
 
 
-	<div id="menu" ng-show="showFlag">
-		<div class="panel list-group">
-			<a href="" class="list-group-item bold" ng-click="setCollapse('cr')">FILES
-				TO BE CREATED <span class="label label-info">{{createSize}}</span> </span>
-			</a>
-			<div id="cr" class="sublinks {{collapse.cr}}"
-				ng-repeat="item in create">
-				<a class="list-group-item small"><span
-					class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
-			</div>
-		</div>
-
-		<div class="panel list-group">
-			<a href="" class="list-group-item bold" ng-click="setCollapse('de')">FILES
-				TO BE DELETED <span class="label label-info">{{deleteSize}}</span> </span>
-			</a>
-			<div id="de" class="sublinks {{collapse.de}}"
-				ng-repeat="item in delete">
-				<a class="list-group-item small"><span
-					class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
-			</div>
-		</div>
-
-		<div class="panel list-group">
-			<a href="" class="list-group-item bold" ng-click="setCollapse('up')">FILES
-				TO BE UPDATED <span class="label label-info">{{updateSize}}</span> </span>
-			</a>
-			<div id="up" class="sublinks {{collapse.up}}"
-				ng-repeat="item in update">
-				<a class="list-group-item small"><span
-					class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
-			</div>
-		</div>
-
-		<div class="panel list-group" ng-show="form.checkboxModel.keep">
-			<a href="" class="list-group-item bold" ng-click="setCollapse('pr')">PRESERVED
-				FILES <span class="label label-info">{{preserveSize}}</span> </span>
-			</a>
-			<div id="pr" class="sublinks {{collapse.pr}}"
-				ng-repeat="item in preserve">
-				<a class="list-group-item small"><span
-					class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
-			</div>
-		</div>
-
-		<div class="panel list-group">
-			<a href="" class="list-group-item bold" ng-click="setCollapse('ex')">EXCLUDED
-				FILES <span class="label label-info">{{excludeSize}}</span> </span>
-			</a>
-			<div id="ex" class="sublinks {{collapse.ex}}"
-				ng-repeat="item in exclude">
-				<a class="list-group-item small"><span
-					class="glyphicon glyphicon-chevron-right"></span> {{item}}</a>
-			</div>
-		</div>
-
-	</div>
 
 	</main>
 
