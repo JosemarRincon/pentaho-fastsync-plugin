@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -211,7 +212,8 @@ public class FileSystem {
 			fop.write(contentInBytes);
 			fop.flush();
 			fop.close();
-			System.out.println("*****Done******");
+			System.out.println("\n file write : \n"+directory + File.separator + fileName);
+			System.out.println("\n *****Done****** \n ");
 		} finally {
 			if (fop != null) {
 				fop.close();
@@ -221,6 +223,7 @@ public class FileSystem {
 
 	public static String getTmpDir(String location) {
 		String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + location;
+		
 
 		File dir = new File(tmpDir);
 
@@ -244,18 +247,57 @@ public class FileSystem {
 		File file = new File(path);
 		return file.exists();
 	}
+	
+	public static boolean isFilesDiffs(String file1, String file2) {
+        File f1 = new File(file1);
+        File f2 = new File(file2);
+        byte[] f1_buf = new byte[1048576];
+        byte[] f2_buf = new byte[1048576];
+        int len;
+        if (f1.length() != f2.length()) {
+            try {
+                InputStream isf1 = new FileInputStream(f1);
+                InputStream isf2 = new FileInputStream(f2);
+                try {
+                    while (isf1.read(f1_buf) >= 0) {
+                        len=isf2.read(f2_buf);
+                        for (int j = 0; j < len; j++) {
+                            if (f1_buf[j] != f2_buf[j]) {
+                                return true; // tamanho diferente e  conteudo diferente
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                }
+            } catch (FileNotFoundException e) {
+            }
+        } 
+        return false; // arquivos iguais
+    }
 
 	@SuppressWarnings("unused")
 	public static boolean diffContentFiles(final List<String> firstFileContent, final List<String> secondFileContent) {
 		final List<String> diff = new ArrayList<String>();
 		boolean filesDiff = false;
-		for (final String line : firstFileContent) {
-			if (!secondFileContent.contains(line)) {
+		int i =0;
+
+		for (final String line : secondFileContent) {
+			//&& !line.contentEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+			if (!firstFileContent.contains(line)  ) {
 				// diff.add(line);
+				if (Repository.DEBUG) {
+					System.out.println("\n-----> line firstFileContent Diff: " + firstFileContent+"\n ------>"+firstFileContent.size()+"firstFileContent size \n");
+					System.out.println("\n-----> line secondFileContent Diff: " + secondFileContent+"\n ------>"+secondFileContent.size()+"secondFileContent size \n");
+					System.out.println("\n-----> line fileSystem Diff: " + line);
+					System.out.println("\n-----> line index: " + i);
+				}
 				filesDiff = true;
 				break;
 			}
+			i++;
 		}
+		
+		
 		return filesDiff;
 	}
 }

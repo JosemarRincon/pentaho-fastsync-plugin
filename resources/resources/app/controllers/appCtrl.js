@@ -16,17 +16,18 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 		checkboxModel: {
 			jcr: {
 				'delete': true,
-				'deletePerm': true,
-				'debug': false
+				'deletePerm': true
+				
 			},
 			fs: {
 				'delete': true,
-				'manifest': false,
-				'debug': false
+				'manifest': false
+				
 			},
 			'keep': true
 		},
-		'path':'/'
+		'path':'/',
+		'debug': false
 	};
 
 	$scope.getList = function (switchFlag, solution, path, keepFlag, debug) {

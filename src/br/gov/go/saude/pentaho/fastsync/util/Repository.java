@@ -45,6 +45,7 @@ public class Repository {
 	public static String TEMP_DIR = "";
 	public static String FILE_NAME = "";
 	public static boolean DEBUG = false;
+	public static String SYNC = "jcr";
 
 	public static Collection<String> getDiff(Collection<String> firstList, Collection<String> secondList) {
 		Collection<String> _firstList = new ArrayList<String>(firstList);
@@ -123,7 +124,7 @@ public class Repository {
 		Collection<File> localFiles = Search.searchFileAndDirsRecursive(location);
 
 		if (localFiles == null) {
-			throw new Exception("Solution not found in the pentaho-solution folder.");
+			throw new Exception("Solution " + location + " not found in the pentaho-solution folder.");
 		}
 		for (File localFile : localFiles) {
 			String[] parts = localFile.getPath().split("pentaho-solutions");
@@ -233,10 +234,12 @@ public class Repository {
 		}
 	}
 
-	public static void importFileToJcr(String location, String zipFile) throws Exception {
-		String logLevel = Repository.DEBUG ? "DEBUG" : "INFO";
-
+	public static void importFileToJcr(String location, String zipFile, String zipName) throws Exception {
+		String logLevel = Repository.DEBUG ? "Verbose" : "INFO";
+		String teste = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/teste/siconti.zip";
 		InputStream input = new FileInputStream(zipFile);
+		// String solution = File.separator+location;
+
 
 		try {
 			FormDataContentDisposition fileInfo = ((FormDataContentDisposition.FormDataContentDispositionBuilder) FormDataContentDisposition
@@ -245,10 +248,44 @@ public class Repository {
 			RepositoryImportResource repositoryImporter = new RepositoryImportResource();
 			if (Repository.DEBUG) {
 				System.out.println("\n----->  fileInfo: " + fileInfo + "\n");
-	
+				System.out.println("\n----->  fileInfo name: " + fileInfo.getFileName() + "\n");
+				System.out.println("\n----->  zipFile for import: " + zipFile + "\n");
+				System.out.println("\n----->  solution: " + location + "\n");
+				System.out.println("\n----->  logLevel: " + logLevel + "\n");
+
 			}
-			Response ret = repositoryImporter.doPostImport(location, input, "true", "true", "true", "true", "UTF-8",
-					logLevel, fileInfo, null);
+
+			/**
+			 * 
+			 * @param importDir
+			 *            JCR Directory to which the zip structure or single
+			 *            file will be uploaded to.
+			 * @param fileUpload
+			 *            Input stream for the file.
+			 * @param overwriteFile
+			 *            The flag indicates ability to overwrite existing file.
+			 * @param overwriteAclPermissions
+			 *            The flag indicates ability to overwrite Acl
+			 *            permissions.
+			 * @param applyAclPermissions
+			 *            The flag indicates ability to apply Acl permissions.
+			 * @param retainOwnership
+			 *            The flag indicates ability to retain ownership.
+			 * @param charSet
+			 *            The charset for imported file.
+			 * @param logLevel
+			 *            The level of logging.
+			 * @param fileNameOverride
+			 *            If present and the content represents a single file,
+			 *            this parameter contains the filename to use when
+			 *            storing the file in the repository. If not present,
+			 *            the fileInfo.getFileName will be used. Note that the
+			 *            later cannot reliably handle foreign character sets.
+			 * 
+			 */
+
+			Response ret = repositoryImporter.doPostImport("/siconti", input, "true", "true", "true", "true",
+					"UTF-8", logLevel, fileInfo, null);
 
 			if (ret.getStatus() == 403) {
 				throw new UnifiedRepositoryAccessDeniedException("FORBIDDEN");
@@ -317,17 +354,16 @@ public class Repository {
 
 	}
 
-	public static void exportFileToFs2(String folder, String location ,ReturnFileList listFiles) throws Exception, IOException {
+	public static void exportFileToFs2(String folder, String location, ReturnFileList listFiles)
+			throws Exception, IOException {
 
 		if (Repository.DEBUG) {
 			System.out.println("\n-----> unpack file: " + folder + "\n");
 			System.out.println("\n-----> location: " + location + "\n");
 		}
-		if(!listFiles.isEmpty()){
+		if (!listFiles.isEmpty()) {
 			ZipUtil.unpack(new File(TEMP_DIR + "/" + FILE_NAME), new File(folder + location));
 		}
-
-		
 
 	}
 
@@ -371,6 +407,20 @@ public class Repository {
 		}
 	}
 
+	public static boolean isJcrPathExists(String location) {
+
+		if (fileService == null) {
+			fileService = new FileService();
+		}
+		try {
+			fileService.doGetProperties(location);
+			return true;
+
+		} catch (FileNotFoundException e) {
+			return false;
+		}
+	}
+
 	public static Collection<String> removeNewerFsFiles(Collection<String> fileList, Map<String, Date> repoList,
 			String solutionPath, String base) {
 		Collection<String> preserveList = new ArrayList<String>();
@@ -407,7 +457,7 @@ public class Repository {
 			wrapper = fileService.doGetFileOrDirAsDownload(userAgent, location, withManifest);
 		} catch (Throwable e) {
 			if ((e instanceof FileNotFoundException)) {
-				throw new Exception("JCR path '" + location + "' not found.");
+				throw new Exception("JCR path '" + location.replaceAll(":","") + "' not found.");
 			}
 		}
 
@@ -422,18 +472,21 @@ public class Repository {
 
 		TEMP_DIR = tmpDir;
 		FILE_NAME = filename;
-		if (Repository.DEBUG) {
-			 System.out.println("\n-----> zipFile gerado: " + zipFile + "\n");
-			 System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
-			 System.out.println("\n-----> filename: " + filename + "\n");
-			 System.out.println("\n-----> location: " + location + "\n");
+		if(Repository.SYNC.equals("fs")){
+			ZipUtil.unpack(new File(zipFile), new File(tmpDir));
 		}
-		ZipUtil.unpack(new File(zipFile), new File(tmpDir));
+		
+		if (Repository.DEBUG) {
+			System.out.println("\n-----> zipFile gerado from JCR: " + zipFile + "\n");
+			System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
+			System.out.println("\n-----> filename: " + filename + "\n");
+			System.out.println("\n-----> location: " + location + "\n");
+		}
 
 	}
 
-	public static Collection<String> addFilesModifidied(Collection<String> fileList, String solutionPath, String base,
-			String tmpDir) throws Throwable {
+	public static Collection<String> addFilesModifidied(Collection<String> fileList, String solutionPath, String tmpDir,
+			Map<String, Date> repoList, String base) throws Throwable {
 
 		Collection<String> updateList = new ArrayList<String>();
 		Iterator<String> i = fileList.iterator();
@@ -448,18 +501,38 @@ public class Repository {
 
 			File file = new File(_file);
 			if ((!file.isDirectory())) {
-				File jcrfile = new File(_jcrFilePath);
-				final Path _fsFile = Paths.get(file.toString());
+
 				try {
-					final Path _jcrFile = Paths.get(jcrfile.toString());
-					List<String> firstFileContent = Files.readAllLines(_fsFile, Charset.forName("ISO-8859-1"));
-					final List<String> secondFileContent = Files.readAllLines(_jcrFile, Charset.forName("ISO-8859-1"));
-					if (FileSystem.diffContentFiles(secondFileContent, firstFileContent)) {
-						if (Repository.DEBUG) {
-							System.out.println("\n-----> file to be updated: " + fsFile.replaceAll(":", "/") + "\n");
+
+
+					Date jcrTimestamp = (Date) repoList.get(base + fsFile);
+					if (FileSystem.isFilesDiffs(_file, _jcrFilePath)) {
+						if (Repository.SYNC.equals("fs")) {
+
+							if (jcrTimestamp.after(new Date(file.lastModified()))) {
+								if (Repository.DEBUG) {
+									System.out.println("\n-----> jcrTimestamp: " + jcrTimestamp);
+									System.out.println("\n-----> fsTimestamp: " + new Date(file.lastModified()));
+									System.out.println(
+											"\n-----> file to be updated: " + fsFile.replaceAll(":", "/") + "\n");
+								}
+
+								updateList.add(fsFile.replaceAll(":", "/"));
+								i.remove();
+							}
+
+						} else if (new Date(file.lastModified()).after(jcrTimestamp)) {
+							if (Repository.DEBUG) {
+								System.out.println("\n-----> jcrTimestamp: " + jcrTimestamp);
+								System.out.println("\n-----> fsTimestamp: " + new Date(file.lastModified()));
+								System.out
+										.println("\n-----> file to be updated: " + fsFile.replaceAll(":", "/") + "\n");
+							}
+
+							updateList.add(fsFile.replaceAll(":", "/"));
+							i.remove();
 						}
-						updateList.add(fsFile.replaceAll(":", "/"));
-						i.remove();
+
 					}
 
 				} catch (Exception e) {
@@ -467,7 +540,7 @@ public class Repository {
 				}
 			}
 
-		}// 
+		} //
 
 		return updateList;
 	}
