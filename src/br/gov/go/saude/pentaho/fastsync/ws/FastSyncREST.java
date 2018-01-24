@@ -100,620 +100,667 @@ public class FastSyncREST {
 			myUrlEncoded = (String) info.getQueryParameters().getFirst("urlEncoded");
 
 			if ((!StringUtils.isBlank(myType)) && (!"undefined".equalsIgnoreCase(myType))
-				&& (!StringUtils.isBlank(myToken)) && (!"undefined".equalsIgnoreCase(myToken))
-				&& (!StringUtils.isBlank(myUrlEncoded)) && (!"undefined".equalsIgnoreCase(myUrlEncoded))) {
+					&& (!StringUtils.isBlank(myToken)) && (!"undefined".equalsIgnoreCase(myToken))
+					&& (!StringUtils.isBlank(myUrlEncoded)) && (!"undefined".equalsIgnoreCase(myUrlEncoded))) {
 				ret = Login.doLogin(this.request, this.response, info, myType, myToken, myUrlEncoded);
 
-			if (!((Boolean) ret.get("ok")).booleanValue()) {
-				output.setMessage("Authentication failed.");
+				if (!((Boolean) ret.get("ok")).booleanValue()) {
+					output.setMessage("Authentication failed.");
+					output.setError(Boolean.valueOf(true));
+					output.setError_message((String) ret.get("message"));
+					PentahoLogoutHandler pentahoLogoutHandler;
+					return output;
+				}
+			}
+
+			String _PATH = solution + "/";
+			if ((!"".equalsIgnoreCase(path)) && (path != null)) {
+				_PATH = _PATH + path + "/";
+			}
+			_PATH = _PATH + schema;
+			String schemaPath = PentahoSystem.getApplicationContext().getSolutionPath(_PATH).replaceAll("\\\\+", "/")
+					.replaceAll("/+", "/");
+
+			InputStream dataInputStream = new FileInputStream(schemaPath);
+
+			FormDataContentDisposition schemaFileInfo = ((FormDataContentDisposition.FormDataContentDispositionBuilder) FormDataContentDisposition
+					.name("uploadAnalysis").fileName(schema)).build();
+
+			String catalogName = PublishUtil.determineDomainCatalogName(schemaPath, schema);
+
+			if (!PublishUtil.validateName(catalogName)) {
 				output.setError(Boolean.valueOf(true));
-				output.setError_message((String) ret.get("message"));
+				output.setError_message("FastSync: Invalid catalog name.");
+				output.setMessage("Illegal character on the catalog name.");
 				PentahoLogoutHandler pentahoLogoutHandler;
 				return output;
 			}
-		}
 
-		String _PATH = solution + "/";
-		if ((!"".equalsIgnoreCase(path)) && (path != null)) {
-			_PATH = _PATH + path + "/";
-		}
-		_PATH = _PATH + schema;
-		String schemaPath = PentahoSystem.getApplicationContext().getSolutionPath(_PATH).replaceAll("\\\\+", "/")
-		.replaceAll("/+", "/");
+			AnalysisService service = new AnalysisService();
 
-		InputStream dataInputStream = new FileInputStream(schemaPath);
+			boolean xmlaEnabled = "True".equalsIgnoreCase(xmlaEnabledFlag);
 
-		FormDataContentDisposition schemaFileInfo = ((FormDataContentDisposition.FormDataContentDispositionBuilder) FormDataContentDisposition
-			.name("uploadAnalysis").fileName(schema)).build();
+			service.putMondrianSchema(dataInputStream, schemaFileInfo, catalogName, null, null, true, xmlaEnabled,
+					"Datasource=" + datasourceName, null);
 
-		String catalogName = PublishUtil.determineDomainCatalogName(schemaPath, schema);
-
-		if (!PublishUtil.validateName(catalogName)) {
-			output.setError(Boolean.valueOf(true));
-			output.setError_message("FastSync: Invalid catalog name.");
-			output.setMessage("Illegal character on the catalog name.");
+			output.setError(Boolean.valueOf(false));
+			output.setMessage(catalogName + " published successful.");
+		} catch (FileNotFoundException e) {
 			PentahoLogoutHandler pentahoLogoutHandler;
-			return output;
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Schema file not found.");
+			e.printStackTrace();
+		} catch (CannotCreateTransactionException e) {
+			PentahoLogoutHandler pentahoLogoutHandler;
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Access denied for anonymous user.");
+			e.printStackTrace();
+		} catch (PentahoAccessControlException e) {
+			PentahoLogoutHandler pentahoLogoutHandler;
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Pentaho Access Control");
+			e.printStackTrace();
+		} catch (Exception e) {
+			PentahoLogoutHandler pentahoLogoutHandler;
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Internal Server Error");
+			e.printStackTrace();
+		} finally {
+
+			if (ret != null) {
+				PentahoLogoutHandler pentahoLogoutHandler = new PentahoLogoutHandler();
+				pentahoLogoutHandler.logout(this.request, this.response, null);
+			}
 		}
 
-		AnalysisService service = new AnalysisService();
+		return output;
+	}
 
-		boolean xmlaEnabled = "True".equalsIgnoreCase(xmlaEnabledFlag);
+	public void syncJcr(String solution, String path, String delete, String deletePerm, Output output,
+			boolean keepNewerFlag, String withManifest, String userAgent) throws Throwable {
+		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
+				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
 
-		service.putMondrianSchema(dataInputStream, schemaFileInfo, catalogName, null, null, true, xmlaEnabled,
-			"Datasource=" + datasourceName, null);
+		if ("True".equalsIgnoreCase(delete)) {
+			String location = (path + "/" + solution).replaceAll("/+", "/");
+
+			String deleteList = Repository.getDeleteList(path, location, solutionFullPath);
+
+			if (deleteList.length() > 0) {
+				Repository.deleteItems(deleteList, "True".equalsIgnoreCase(deletePerm));
+			}
+		}
+
+		// File dstDir = new File(Repository.TEMP_DIR + File.separator +
+		// Repository.SOLUTION + File.separator + path + File.separator
+		// + solution + File.separator);
+		
+		String dstCopyFull = Repository.TEMP_DIR + File.separator + Repository.SOLUTION + File.separator+ Repository.SOLUTION + File.separator;
+		File dstDir = new File(dstCopyFull);
+
+		if (Repository.DEBUG) {
+			System.out.println("\n----->  solutionFullPath: " + solutionFullPath + "\n");
+			System.out.println("\n----->  destine dir: " + dstDir + "\n");
+
+		}
+
+		ReturnFileList listFiles = new ReturnFileList();
+		try {
+			listJcr(solution, path, listFiles, keepNewerFlag, withManifest, userAgent);
+			// FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
+		} finally {
+			String listaExcludCopy = listFiles.getPreserve().isEmpty() ? ""
+					: listFiles.getPreserve().toString().replaceAll("\\[", "").replaceAll("\\]", "")
+							.replaceAll("\\/" + Repository.SOLUTION, ".*\\\\\\+").replaceAll("\\+", "\\\\");
+
+			System.out.println("\n----->  listaExcludCopy: " + listaExcludCopy + "\n");
+			FileSystem.copyDirectory(new File(solutionFullPath), dstDir,
+					PluginConfig.props.getProperty("import.exclude.list"));
+		}
+		String dstTarget = Repository.TEMP_DIR + File.separator + Repository.SOLUTION + File.separator;
+
+		for (String item : listFiles.getPreserve()) {
+			//System.out.println("\n----->  remove preserved item syncJcr: " +item + "\n");
+			//System.out.println("\n----->  remove preserved dstTarget+item syncJcr: " + dstTarget + item + "\n");
+			File file = new File(dstTarget + item);
+
+//			if ((file.isFile()) || (FileSystem.isDirectoryEmpty(file))) {
+//				FileSystem.deleteFile(file);
+//			}
+			if ((file.isFile()) ) {
+				FileSystem.deleteFile(file);
+			}
+		}
+
+		Collection<File> stageFolderFiles = Search.searchFileAndDirsRecursive(dstCopyFull);
+		stageFolderFiles.remove(new File(dstCopyFull));
+
+		Collections.reverse((List<File>) stageFolderFiles);
+
+		for (File item : stageFolderFiles) {
+			//System.out.println("\n----->  remove staged item syncJcr: " +item + "\n");
+			if (FileSystem.isDirectoryEmpty(item)) {
+				FileSystem.deleteFile(item);
+			}
+		}
+
+		if (!FileSystem.isDirectoryEmpty(dstCopyFull)) {
+			Zip zipPack = new Zip();
+			String zipName = Repository.SOLUTION + ".zip";
+			String fullZipName = Repository.TEMP_DIR + File.separator + zipName;
+			zipPack.setFullPathZipFileName(fullZipName);
+			//zipPack.setPackDirectoryPath((dstTargetFull).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
+			zipPack.setPackDirectoryPath((dstTarget).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
+			zipPack.packDirectory();
+			
+			if (Repository.DEBUG) {
+				System.out.println("\n----->  tmpDir para JRC: " + (dstCopyFull).replaceAll("\\\\+", "/").replaceAll("/+", "/") + "\n");
+				System.out.println("\n----->  fullZipName para enviar pro JRC: " + fullZipName + "\n");
+				System.out.println("\n----->  solution: " + Repository.SOLUTION + "\n");
+			}
+			 Repository.importFileToJcr(fullZipName, zipName);
+		}
 
 		output.setError(Boolean.valueOf(false));
-		output.setMessage(catalogName + " published successful.");
-	} catch (FileNotFoundException e) {
-		PentahoLogoutHandler pentahoLogoutHandler;
-		output.setError(Boolean.valueOf(true));
-		output.setError_message(e.getMessage());
-		output.setMessage("FastSync: Schema file not found.");
-		e.printStackTrace();
-	} catch (CannotCreateTransactionException e) {
-		PentahoLogoutHandler pentahoLogoutHandler;
-		output.setError(Boolean.valueOf(true));
-		output.setError_message(e.getMessage());
-		output.setMessage("FastSync: Access denied for anonymous user.");
-		e.printStackTrace();
-	} catch (PentahoAccessControlException e) {
-		PentahoLogoutHandler pentahoLogoutHandler;
-		output.setError(Boolean.valueOf(true));
-		output.setError_message(e.getMessage());
-		output.setMessage("FastSync: Pentaho Access Control");
-		e.printStackTrace();
-	} catch (Exception e) {
-		PentahoLogoutHandler pentahoLogoutHandler;
-		output.setError(Boolean.valueOf(true));
-		output.setError_message(e.getMessage());
-		output.setMessage("FastSync: Internal Server Error");
-		e.printStackTrace();
-	} finally {
+		output.setMessage("Successful synchronize to JCR from FileSystem.");
 
-		if (ret != null) {
-			PentahoLogoutHandler pentahoLogoutHandler = new PentahoLogoutHandler();
-			pentahoLogoutHandler.logout(this.request, this.response, null);
-		}
+		// } catch (Throwable e) {
+		// output.setError(Boolean.valueOf(true));
+		// output.setError_message(e.getMessage());
+		// output.setMessage("FastSync: Internal Server Error");
+		// e.printStackTrace();
+		//
+		// }
 	}
 
-	return output;
-}
+	public void syncFs(String solution, String path, String delete, Output output, String tmpDir, String userAgent,
+			String withManifest, boolean keepNewerFlag) throws Throwable {
 
-public void syncJcr(String solution, String path, String delete, String deletePerm, Output output, String tmpDir,
-	boolean keepNewerFlag, String withManifest, String userAgent) throws Exception {
-	String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
-	.replaceAll("\\\\+", "/").replaceAll("/+", "/");
+		String solutionPath = PentahoSystem.getApplicationContext().getSolutionPath("").replaceAll("\\\\+", "/")
+				.replaceAll("/+", "/");
 
-	if ("True".equalsIgnoreCase(delete)) {
 		String location = (path + "/" + solution).replaceAll("/+", "/");
 
-		String deleteList = Repository.getDeleteList(path, location, solutionFullPath);
+		if ("True".equalsIgnoreCase(delete)) {
+			String deleteList = Repository.getDeleteFsList(path, location, solutionPath + "/" + solution);
 
-		if (deleteList.length() > 0) {
-			Repository.deleteItems(deleteList, "True".equalsIgnoreCase(deletePerm));
+			if (deleteList.length() > 0) {
+				Repository.deleteItemsFs(solutionPath, deleteList);
+			}
 		}
-	}
-
-	File dstDir = new File(tmpDir + File.separator + solution + File.separator + path + File.separator + solution
-		+ File.separator);
-
-	if (Repository.DEBUG) {
-		System.out.println("\n----->  solutionFullPath: " + solutionFullPath + "\n");
-		System.out.println("\n----->  destine dir: " + dstDir + "\n");
-	}
-
-	FileSystem.copyDirectory(new File(solutionFullPath), dstDir,
-		PluginConfig.props.getProperty("import.exclude.list"));
-
-	ReturnFileList listFiles = new ReturnFileList();
-
-	if (keepNewerFlag) {
+		ReturnFileList listFiles = new ReturnFileList();
 		try {
-			tmpDir = FileSystem.getTmpDir(solution);
-			listJcr(solution, path, listFiles, keepNewerFlag, tmpDir,
-				withManifest, userAgent);
+			
+			solutionPath = solutionPath + Repository.SOLUTION;
+			// if (keepNewerFlag) {
+			listFs(solution, path, listFiles, keepNewerFlag, tmpDir, withManifest, userAgent);
+			// }
+
+			// Repository.exportFileToFs(userAgent, location, withManifest,
+			// tmpDir,
+			// solutionPath, listFiles.getPreserve());
+			
+		} finally {
+			System.out.println("\n----->  solutionPath FS: " + solutionPath + "\n");
+			Repository.exportFileToFs2(solutionPath, location, listFiles);
+
+			FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
+			System.out.println("\n----->  Delete folder tmp FS : " + Repository.TEMP_DIR + "\n");
+
+		}
+
+		output.setError(Boolean.valueOf(false));
+		output.setMessage("Successful synchronize to FileSystem from JCR.");
+	}
+
+	@GET
+	@Path("/sync/{id}")
+	@Produces({ "application/json" })
+	public Output syncSolution(@Context UriInfo info, @HeaderParam("user-agent") String userAgent,
+			@PathParam("id") String id) {
+		this.response.setHeader("Access-Control-Allow-Origin", "*");
+		this.response.setHeader("Access-Control-Allow-Credentials", "true");
+
+		Output output = new Output();
+
+		String solution = "";
+		String path = "";
+		String withManifest = "";
+
+		Map<String, Object> ret = null;
+
+		boolean keepNewerFlag = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("keepNewerFlag"));
+
+		try {
+			Repository.SYNC = id;
+			String delete = (String) info.getQueryParameters().getFirst("delete");
+			String deletePerm = (String) info.getQueryParameters().getFirst("deletePerm");
+			Repository.DEBUG = "True".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
+
+			String _withManifest = (String) info.getQueryParameters().getFirst("withManifest");
+			withManifest = "true".equalsIgnoreCase(_withManifest) ? "true" : "false";
+
+			String myType = "";
+			myType = (String) info.getQueryParameters().getFirst("type");
+
+			String myToken = "";
+			myToken = (String) info.getQueryParameters().getFirst("token");
+
+			String myUrlEncoded = "";
+			myUrlEncoded = (String) info.getQueryParameters().getFirst("urlEncoded");
+
+			if ((!StringUtils.isBlank(myType)) && (!"undefined".equalsIgnoreCase(myType))
+					&& (!StringUtils.isBlank(myToken)) && (!"undefined".equalsIgnoreCase(myToken))
+					&& (!StringUtils.isBlank(myUrlEncoded)) && (!"undefined".equalsIgnoreCase(myUrlEncoded))) {
+				ret = Login.doLogin(this.request, this.response, info, myType, myToken, myUrlEncoded);
+
+				if (!((Boolean) ret.get("ok")).booleanValue()) {
+					output.setMessage("Authentication failed.");
+					output.setError(Boolean.valueOf(true));
+					output.setError_message((String) ret.get("message"));
+					// PentahoLogoutHandler pentahoLogoutHandler;
+					return output;
+				}
+			}
+
+			solution = ((String) info.getQueryParameters().getFirst("solution")).replaceAll("/+", "")
+					.replaceAll(":+", "").replaceAll("\\\\+", "");
+
+			if (StringUtils.isBlank(solution)) {
+				output.setError(Boolean.valueOf(true));
+				output.setError_message("FastSync: Missing parameter.");
+				output.setMessage("Parameter solution not defined.");
+				// PentahoLogoutHandler pentahoLogoutHandler;
+				return output;
+			}
+			if ("system".equalsIgnoreCase(solution)) {
+				output.setError(Boolean.valueOf(true));
+				output.setError_message("FastSync: Invalid solution.");
+				output.setMessage("System folder can not be synchronized.");
+
+				return output;
+			}
+
+			path = ((String) info.getQueryParameters().getFirst("path")).replaceAll("/+", "/").replaceAll(":+", "/")
+					.replaceAll("\\\\+", "/");
+
+			if (path != null) {
+				path = path.toLowerCase();
+			}
+			if (StringUtils.isBlank(path)) {
+				path = "public";
+			}
+
+			StringUtils.startsWith(path, "/");
+			StringUtils.removeEnd(path, "/");
+
+			Repository.TEMP_DIR = FileSystem.getTmpDir(solution).replaceAll("\\\\+", "/").replaceAll("/+", "/");
+			Repository.SOLUTION = solution;
+			if (Repository.DEBUG) {
+				System.out.println("\n----->  tmpDir sync: " + Repository.TEMP_DIR + "\n");
+				System.out.println("\n----->  solution: " + Repository.SOLUTION + "\n");
+				System.out.println("\n----->  Sync: " + Repository.SYNC + "\n");
+
+			}
+
+			if ("jcr".equalsIgnoreCase(Repository.SYNC)) {
+				syncJcr(solution, path, delete, deletePerm, output, keepNewerFlag, userAgent, withManifest);
+			} else if ("fs".equalsIgnoreCase(Repository.SYNC)) {
+				syncFs(solution, path, delete, output, Repository.TEMP_DIR, userAgent, withManifest, keepNewerFlag);
+			} else {
+				output.setError(Boolean.valueOf(true));
+				output.setError_message("FastSync: Invalid URL.");
+				output.setMessage("/sync/" + id + " not defined.");
+			}
+
+			return output;
+		} catch (PentahoAccessControlException e) {
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage(
+					"FastSync: Access denied. You do not have role permission to create and publish content.");
+			e.printStackTrace();
+		} catch (UnifiedRepositoryAccessDeniedException e) {
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Access denied. Check folder permissions.");
+			e.printStackTrace();
+		} catch (PlatformImportException e) {
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: You do not have permission to create this folder.");
+			e.printStackTrace();
+		} catch (CannotCreateTransactionException e) {
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Access denied for anonymous user.");
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Internal Server Error");
+			e.printStackTrace();
+		} catch (Exception e) {
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Internal Server Error");
+			e.printStackTrace();
 		} catch (Throwable e) {
 			output.setError(Boolean.valueOf(true));
 			output.setError_message(e.getMessage());
 			output.setMessage("FastSync: Internal Server Error");
 			e.printStackTrace();
 
+		} finally {
+			try {
+
+				// FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
+				System.out.println("\n-----> Delete dir : " + Repository.TEMP_DIR + "\n");
+
+				if (ret != null) {
+					PentahoLogoutHandler pentahoLogoutHandler = new PentahoLogoutHandler();
+					pentahoLogoutHandler.logout(request, response, null);
+				}
+
+			} catch (Throwable e) {
+				output.setError(Boolean.valueOf(true));
+				output.setError_message(e.getMessage());
+				output.setMessage("FastSync: Internal Server Error");
+				e.printStackTrace();
+			}
 		}
-
-	}
-	for (String item : listFiles.getPreserve()) {
-		File file = new File(tmpDir + "/" + solution + item);
-
-		if ((file.isFile()) || (FileSystem.isDirectoryEmpty(file))) {
-			FileSystem.deleteFile(file);
-		}
-	}
-
-	Collection<File> stageFolderFiles = Search.searchFileAndDirsRecursive(tmpDir + "/" + solution);
-
-	stageFolderFiles.remove(new File(tmpDir + "/" + solution));
-
-	Collections.reverse((List<File>) stageFolderFiles);
-
-	for (File item : stageFolderFiles) {
-		if (FileSystem.isDirectoryEmpty(item)) {
-			FileSystem.deleteFile(item);
-		}
-	}
-
-
-	if (!FileSystem.isDirectoryEmpty(tmpDir + "/" + solution)) {
-
-		Zip zipPack = new Zip();
-
-		String zipName = solution + ".zip";
-		String fullZipName = tmpDir + File.separator + zipName;
-
-		zipPack.setFullPathZipFileName(fullZipName);
-		zipPack.setPackDirectoryPath(
-			(tmpDir + File.separator + solution).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
-		zipPack.packDirectory();
-		if (Repository.DEBUG) {
-			System.out.println("\n----->  tmpDir: " + tmpDir + "\n");
-			System.out.println("\n----->  fullZipName: " + fullZipName + "\n");
-			System.out.println("\n----->  solution: " + solution + "\n");
-		}
-		Repository.importFileToJcr(tmpDir, fullZipName, zipName);
-	}
-
-	output.setError(Boolean.valueOf(false));
-	output.setMessage("Successful synchronize to JCR from FileSystem.");
-}
-
-public void syncFs(String solution, String path, String delete, Output output, String tmpDir, String userAgent,
-	String withManifest, boolean keepNewerFlag) throws Throwable {
-
-	String solutionPath = PentahoSystem.getApplicationContext().getSolutionPath("").replaceAll("\\\\+", "/")
-	.replaceAll("/+", "/");
-
-	String location = (path + "/" + solution).replaceAll("/+", "/");
-
-	if ("True".equalsIgnoreCase(delete)) {
-		String deleteList = Repository.getDeleteFsList(path, location, solutionPath + "/" + solution);
-
-		if (deleteList.length() > 0) {
-			Repository.deleteItemsFs(solutionPath, deleteList);
-		}
-	}
-
-	ReturnFileList listFiles = new ReturnFileList();
-
-		// if (keepNewerFlag) {
-	listFs(solution, path, listFiles, keepNewerFlag, tmpDir, withManifest, userAgent);
-		// }
-
-		// Repository.exportFileToFs(userAgent, location, withManifest, tmpDir,
-		// solutionPath, listFiles.getPreserve());
-	Repository.exportFileToFs2(solutionPath, location, listFiles);
-
-	output.setError(Boolean.valueOf(false));
-	output.setMessage("Successful synchronize to FileSystem from JCR.");
-}
-
-@GET
-@Path("/sync/{id}")
-@Produces({ "application/json" })
-public Output syncSolution(@Context UriInfo info, @HeaderParam("user-agent") String userAgent,
-	@PathParam("id") String id) {
-	this.response.setHeader("Access-Control-Allow-Origin", "*");
-	this.response.setHeader("Access-Control-Allow-Credentials", "true");
-
-	Output output = new Output();
-
-	String tmpDir = "";
-
-	Map<String, Object> ret = null;
-
-	boolean keepNewerFlag = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("keepNewerFlag"));
-
-	try {
-		Repository.SYNC = id;
-		String delete = (String) info.getQueryParameters().getFirst("delete");
-		String deletePerm = (String) info.getQueryParameters().getFirst("deletePerm");
-		Repository.DEBUG = "True".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
-
-		String _withManifest = (String) info.getQueryParameters().getFirst("withManifest");
-		String withManifest = "true".equalsIgnoreCase(_withManifest) ? "true" : "false";
-
-		String myType = "";
-		myType = (String) info.getQueryParameters().getFirst("type");
-
-		String myToken = "";
-		myToken = (String) info.getQueryParameters().getFirst("token");
-
-		String myUrlEncoded = "";
-		myUrlEncoded = (String) info.getQueryParameters().getFirst("urlEncoded");
-
-		if ((!StringUtils.isBlank(myType)) && (!"undefined".equalsIgnoreCase(myType))
-			&& (!StringUtils.isBlank(myToken)) && (!"undefined".equalsIgnoreCase(myToken))
-			&& (!StringUtils.isBlank(myUrlEncoded)) && (!"undefined".equalsIgnoreCase(myUrlEncoded))) {
-			ret = Login.doLogin(this.request, this.response, info, myType, myToken, myUrlEncoded);
-
-		if (!((Boolean) ret.get("ok")).booleanValue()) {
-			output.setMessage("Authentication failed.");
-			output.setError(Boolean.valueOf(true));
-			output.setError_message((String) ret.get("message"));
-			PentahoLogoutHandler pentahoLogoutHandler;
-			return output;
-		}
-	}
-
-	String solution = ((String) info.getQueryParameters().getFirst("solution")).replaceAll("/+", "")
-	.replaceAll(":+", "").replaceAll("\\\\+", "");
-
-	if (StringUtils.isBlank(solution)) {
-		output.setError(Boolean.valueOf(true));
-		output.setError_message("FastSync: Missing parameter.");
-		output.setMessage("Parameter solution not defined.");
-		PentahoLogoutHandler pentahoLogoutHandler;
-		return output;
-	}
-	if ("system".equalsIgnoreCase(solution)) {
-		output.setError(Boolean.valueOf(true));
-		output.setError_message("FastSync: Invalid solution.");
-		output.setMessage("System folder can not be synchronized.");
-		PentahoLogoutHandler pentahoLogoutHandler;
 		return output;
 	}
 
-	String path = ((String) info.getQueryParameters().getFirst("path")).replaceAll("/+", "/")
-	.replaceAll(":+", "/").replaceAll("\\\\+", "/");
+	public void listJcr(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag,
+			String withManifest, String userAgent) throws Throwable {
+		// String solutionPath =
+		// PentahoSystem.getApplicationContext().getSolutionPath("").replaceAll("\\\\+",
+		// "/")
+		// .replaceAll("/+", "/");
 
-	if (path != null) {
-		path = path.toLowerCase();
-	}
-	if (StringUtils.isBlank(path)) {
-		path = "public";
-	}
+		String base = "/".equals(path) ? "" : path;
 
-	StringUtils.startsWith(path, "/");
-	StringUtils.removeEnd(path, "/");
+		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
+				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
 
-	tmpDir = FileSystem.getTmpDir(solution).replaceAll("\\\\+", "/").replaceAll("/+", "/");
-	if (Repository.DEBUG) {
-		System.out.println("\n----->  tmpDir sync: " + tmpDir + "\n");
-		System.out.println("\n----->  Sync: " + Repository.SYNC + "\n");
+		String location = (path + "/" + solution + "/").replaceAll("/+", "/");
 
-	}
+		Repo repoMaps = Repository.getRepoFiles(location.replaceAll("/", ":"));
 
-	if ("jcr".equalsIgnoreCase(Repository.SYNC)) {
-		syncJcr(solution, path, delete, deletePerm, output, tmpDir, keepNewerFlag, userAgent, withManifest);
-	} else if ("fs".equalsIgnoreCase(Repository.SYNC)) {
-		syncFs(solution, path, delete, output, tmpDir, userAgent, withManifest, keepNewerFlag);
-	} else {
-		output.setError(Boolean.valueOf(true));
-		output.setError_message("FastSync: Invalid URL.");
-		output.setMessage("/sync/" + id + " not defined.");
-	}
+		Collection<String> repoFiles = repoMaps.getItemsList();
 
-	return output;
-} catch (PentahoAccessControlException e) {
-	output.setError(Boolean.valueOf(true));
-	output.setError_message(e.getMessage());
-	output.setMessage(
-		"FastSync: Access denied. You do not have role permission to create and publish content.");
-	e.printStackTrace();
-} catch (UnifiedRepositoryAccessDeniedException e) {
-	output.setError(Boolean.valueOf(true));
-	output.setError_message(e.getMessage());
-	output.setMessage("FastSync: Access denied. Check folder permissions.");
-	e.printStackTrace();
-} catch (PlatformImportException e) {
-	output.setError(Boolean.valueOf(true));
-	output.setError_message(e.getMessage());
-	output.setMessage("FastSync: You do not have permission to create this folder.");
-	e.printStackTrace();
-} catch (CannotCreateTransactionException e) {
-	output.setError(Boolean.valueOf(true));
-	output.setError_message(e.getMessage());
-	output.setMessage("FastSync: Access denied for anonymous user.");
-	e.printStackTrace();
-} catch (FileNotFoundException e) {
-	output.setError(Boolean.valueOf(true));
-	output.setError_message(e.getMessage());
-	output.setMessage("FastSync: Internal Server Error");
-	e.printStackTrace();
-} catch (Exception e) {
-	output.setError(Boolean.valueOf(true));
-	output.setError_message(e.getMessage());
-	output.setMessage("FastSync: Internal Server Error");
-	e.printStackTrace();
-} catch (Throwable e) {
-	output.setError(Boolean.valueOf(true));
-	output.setError_message(e.getMessage());
-	output.setMessage("FastSync: Internal Server Error");
-	e.printStackTrace();
+		Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
+		Collection<String> _localFiles = Repository.addPrefix(path, localFiles);
 
-} finally {
-	try {
-		FileSystem.deleteFolder(new File(tmpDir));
-		System.out.println("\n----->  Delete dir : " + tmpDir + "\n");
+		_localFiles.remove(location.substring(0, location.length() - 1));
 
-		if (ret != null) {
-			PentahoLogoutHandler pentahoLogoutHandler = new PentahoLogoutHandler();
-			pentahoLogoutHandler.logout(request, response, null);
-		}
-	} catch (IOException e) {
-		output.setError(Boolean.valueOf(true));
-		output.setError_message(e.getMessage());
-		output.setMessage("FastSync: Internal Server Error");
-		e.printStackTrace();
-	}
-}
-return output;
-}
-
-public void listJcr(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag, String tmpDir,
-	String withManifest, String userAgent) throws Throwable {
-	String solutionPath = PentahoSystem.getApplicationContext().getSolutionPath("").replaceAll("\\\\+", "/")
-	.replaceAll("/+", "/");
-	String base = "/".equals(path) ? "" : path;
-
-	String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
-	.replaceAll("\\\\+", "/").replaceAll("/+", "/");
-
-	String location = (path + "/" + solution + "/").replaceAll("/+", "/");
-
-	Repo repoMaps = Repository.getRepoFiles(location.replaceAll("/", ":"));
-
-	Collection<String> repoFiles = repoMaps.getItemsList();
-
-	Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
-	Collection<String> _localFiles = Repository.addPrefix(path, localFiles);
-
-	_localFiles.remove(location.substring(0, location.length() - 1));
-
-	Collection<String> excludeList = Repository.excludeByRegex(_localFiles,
-		PluginConfig.props.getProperty("import.exclude.list"));
-	for (String item : excludeList) {
-		returnList.getExclude().add(item);
-	}
-
-	Collection<String> deleteList = Repository.getDiff(repoFiles, _localFiles);
-
-	for (String item : deleteList) {
-		returnList.getDelete().add(item);
-	}
-
-	Collection<String> _createList = Repository.getDiff(Repository.getDiff(_localFiles, repoFiles), excludeList);
-	Collection<String> createList = Repository.getDiff(_createList, returnList.getPreserve());
-
-	for (String item : createList) {
-		returnList.getCreate().add(item);
-	}
-
-
-	
-	if (Repository.DEBUG) {
-		System.out.println("\n-----> repoFiles: " + repoFiles + "\n");
-		System.out.println("\n-----> excludeList: " + excludeList + "\n");
-		System.out.println("\n-----> createList: " + createList + "\n");
-	}
-	Collection<String> updateList = new ArrayList<>();
-	if (Repository.isJcrPathExists(location)) {
-		Repository.getFilesFromJcr(userAgent, location, tmpDir, withManifest);
-		updateList = Repository.addFilesModifidied(
-			Repository.getDiff(Repository.getDiff(repoFiles, excludeList), createList),
-			PentahoSystem.getApplicationContext().getSolutionPath(""), tmpDir, repoMaps.getModifiedDateList(),
-			base);
-
-		if (keepNewerFlag) {				Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
-			updateList);
-			if (Repository.DEBUG) {
-				System.out.println("\n-----> preserveList: " + preserveList + "\n");
+		Collection<String> excludeList = Repository.excludeByRegex(_localFiles,
+				PluginConfig.props.getProperty("import.exclude.list"));
+		try {
+			for (String item : excludeList) {
+				returnList.getExclude().add(item);
 			}
 
+			Collection<String> deleteList = Repository.getDiff(repoFiles, _localFiles);
+
+			for (String item : deleteList) {
+				returnList.getDelete().add(item);
+			}
+
+			Collection<String> _createList = Repository.getDiff(Repository.getDiff(_localFiles, repoFiles),
+					excludeList);
+			Collection<String> createList = Repository.getDiff(_createList, returnList.getPreserve());
+
+			for (String item : createList) {
+				returnList.getCreate().add(item);
+			}
+
+			if (Repository.DEBUG) {
+				// System.out.println("\n-----> repoFiles: " + repoFiles +
+				// "\n");
+				System.out.println("\n-----> excludeList: " + excludeList + "\n");
+				System.out.println("\n-----> createList: " + createList + "\n");
+			}
+			Collection<String> updateList = new ArrayList<>();
+
+			Repository.getFilesFromJcr(userAgent, withManifest);
+			if (Repository.isJcrPathExists(Repository.SOLUTION)) {
+				System.out.println("\n----->  Solution sync: " + Repository.SOLUTION + "\n");
+
+				updateList = Repository.addFilesModifidied(
+						Repository.getDiff(Repository.getDiff(repoFiles, excludeList), createList),
+						PentahoSystem.getApplicationContext().getSolutionPath(""), repoMaps.getModifiedDateList(),
+						base);
+
+				if (keepNewerFlag) {
+					Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
+							updateList);
+					if (Repository.DEBUG) {
+						System.out.println("\n-----> preserveList: " + preserveList + "\n");
+					}
+
+					for (String item : preserveList) {
+						if (Repository.isJcrPathExists(item)) {
+							if (!Repository.getJcrPathProperties(item).isFolder()) {
+								returnList.getPreserve().add(item);
+								Repository.removeFilePreservedList(item);
+							}
+						}
+					}
+
+				} else {
+					updateList = Repository.getDiff(localFiles, excludeList);
+				}
+			}
+
+			if (Repository.DEBUG) {
+				System.out.println("\n-----> updateList: " + updateList + "\n");
+				System.out.println("\n-----> updateList size: " + updateList.size() + "\n");
+			}
+
+			for (String item : updateList) {
+				if (!Repository.getJcrPathProperties(item).isFolder()) {
+					returnList.getUpdate().add(item);
+				}
+			}
+
+		} finally {
+			File folder = new File(Repository.TEMP_DIR);
+			if (folder.exists()) {
+				FileSystem.deleteFolder(folder);
+				System.out.println("\n-----> Delete list tmp : " + Repository.TEMP_DIR + "\n");
+
+			}
+
+		}
+	}
+
+	public void listFs(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag, String tmpDir,
+			String withManifest, String userAgent) throws Throwable {
+		String base = "/".equals(path) ? "" : path;
+
+		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
+				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
+
+		String location = (path + "/" + solution).replaceAll("/+", "/");
+
+		Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
+
+		Repo repoMaps = Repository.getRepoFiles(location.replaceAll("/", ":") + ":");
+
+		Collection<String> _repoFiles = repoMaps.getItemsList();
+
+		if (Repository.DEBUG) {
+			System.out.println("\n-----> repoFiles and folders zize: " + _repoFiles.size() + "\n");
+		}
+		FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
+
+		Collection<String> repoFiles = new ArrayList<String>();
+
+		for (String item : _repoFiles) {
+
+			repoFiles.add(StringUtils.removeStart(item, base));
+		}
+
+		Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
+
+		localFiles.remove(StringUtils.removeStart(location, base));
+
+		Collection<String> _deleteList = Repository.getDiff(localFiles, repoFiles);
+
+		Collection<String> excludeList = Repository.excludeByRegex(localFiles,
+				PluginConfig.props.getProperty("import.exclude.list"));
+		for (String item : excludeList) {
+			returnList.getExclude().add(item);
+		}
+
+		Collection<String> deleteList = Repository.getDiff(_deleteList, excludeList);
+		for (String item : deleteList) {
+			returnList.getDelete().add(item);
+		}
+
+		Collection<String> createList = Repository.getDiff(repoFiles, localFiles);
+		for (String item : createList) {
+			returnList.getCreate().add(item);
+		}
+
+		if (Repository.DEBUG) {
+			System.out.println("\n-----> base: " + base + "\n");
+			System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
+			System.out.println("\n-----> userAgent: " + userAgent + "\n");
+		}
+
+		Repository.getFilesFromJcr(userAgent, withManifest);
+		Collection<String> updateList = Repository.addFilesModifidied(
+				Repository.getDiff(Repository.getDiff(localFiles, excludeList), createList),
+				PentahoSystem.getApplicationContext().getSolutionPath(""), repoMaps.getModifiedDateList(), base);
+
+		if (keepNewerFlag) {
+			Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
+					updateList);
 			for (String item : preserveList) {
 				if (Repository.isJcrPathExists(item)) {
-					if (!Repository.getJcrPathProperties(item).isFolder()) {
+					if (!Repository.getJcrPathProperties(base + item).isFolder()) {
 						returnList.getPreserve().add(item);
-							// Repository.removeFilePreservedList(item);
+						Repository.removeFilePreservedList(item);
 					}
 				}
 			}
-			
+			Repository.newZipForUpdate();
 
 		} else {
 			updateList = Repository.getDiff(localFiles, excludeList);
 		}
-	}
 
-	if (Repository.DEBUG) {
-		System.out.println("\n-----> updateList: " + updateList + "\n");
-		System.out.println("\n-----> updateList size: " + updateList.size() + "\n");
-	}
-
-	for (String item : updateList) {
-		if (!Repository.getJcrPathProperties(item).isFolder()) {
-			returnList.getUpdate().add(item);
+		if (Repository.DEBUG) {
+			System.out.println("\n-----> updateList: " + updateList + "\n");
+			System.out.println("\n-----> updateList size: " + updateList.size() + "\n");
 		}
-	}
-}
 
-public void listFs(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag, String tmpDir,
-	String withManifest, String userAgent) throws Throwable {
-	String base = "/".equals(path) ? "" : path;
-
-	String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
-	.replaceAll("\\\\+", "/").replaceAll("/+", "/");
-
-	String location = (path + "/" + solution).replaceAll("/+", "/");
-
-	Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
-
-	Repo repoMaps = Repository.getRepoFiles(location.replaceAll("/", ":") + ":");
-
-	Collection<String> _repoFiles = repoMaps.getItemsList();
-	if (Repository.DEBUG) {
-		System.out.println("\n-----> repoFiles and folders zize: " + _repoFiles.size() + "\n");
-	}
-	Collection<String> repoFiles = new ArrayList<String>();
-
-	for (String item : _repoFiles) {
-
-		repoFiles.add(StringUtils.removeStart(item, base));
-	}
-
-	Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
-
-	localFiles.remove(StringUtils.removeStart(location, base));
-
-	Collection<String> _deleteList = Repository.getDiff(localFiles, repoFiles);
-
-	Collection<String> excludeList = Repository.excludeByRegex(localFiles,
-		PluginConfig.props.getProperty("import.exclude.list"));
-	for (String item : excludeList) {
-		returnList.getExclude().add(item);
-	}
-
-	Collection<String> deleteList = Repository.getDiff(_deleteList, excludeList);
-	for (String item : deleteList) {
-		returnList.getDelete().add(item);
-	}
-
-	Collection<String> createList = Repository.getDiff(repoFiles, localFiles);
-	for (String item : createList) {
-		returnList.getCreate().add(item);
-	}
-
-	if (Repository.DEBUG) {
-		System.out.println("\n-----> base: " + base + "\n");
-		System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
-		System.out.println("\n-----> userAgent: " + userAgent + "\n");
-	}
-
-	Repository.getFilesFromJcr(userAgent, location, tmpDir, withManifest);
-	Collection<String> updateList = Repository.addFilesModifidied(
-		Repository.getDiff(Repository.getDiff(localFiles, excludeList), createList),
-		PentahoSystem.getApplicationContext().getSolutionPath(""), tmpDir, repoMaps.getModifiedDateList(),
-		base);
-
-	if (keepNewerFlag) {
-		Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
-			updateList);
-		for (String item : preserveList) {
-			if (Repository.isJcrPathExists(item)) {
-				if (!Repository.getJcrPathProperties(base + item).isFolder()) {
-					returnList.getPreserve().add(item);
-					Repository.removeFilePreservedList(item);
-				}
+		for (String item : updateList) {
+			if (!Repository.getJcrPathProperties(base + item).isFolder()) {
+				returnList.getUpdate().add(item);
 			}
 		}
-		Repository.newZipForUpdate();
-
-	} else {
-		updateList = Repository.getDiff(localFiles, excludeList);
-	}
-
-	if (Repository.DEBUG) {
-		System.out.println("\n-----> updateList: " + updateList + "\n");
-		System.out.println("\n-----> updateList size: " + updateList.size() + "\n");
-	}
-
-	for (String item : updateList) {
-		if (!Repository.getJcrPathProperties(base + item).isFolder()) {
-			returnList.getUpdate().add(item);
-		}
-	}
-
-}
-
-@GET
-@Path("/sync/list/{id}")
-@Produces({ "application/json" })
-public ReturnFileList listSync(@Context UriInfo info, @HeaderParam("user-agent") String userAgent,
-	@PathParam("id") String id) {
-	ReturnFileList returnList = new ReturnFileList();
-
-	String solution = ((String) info.getQueryParameters().getFirst("solution")).replaceAll("/+", "")
-	.replaceAll(":+", "").replaceAll("\\\\+", "");
-
-	String _withManifest = (String) info.getQueryParameters().getFirst("withManifest");
-	String withManifest = "true".equalsIgnoreCase(_withManifest) ? "true" : "false";
-	String tmpDir = FileSystem.getTmpDir(solution).replaceAll("\\\\+", "/").replaceAll("/+", "/");
-
-	Repository.DEBUG = "True".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
-
-	System.out.println("\n-----> debug: " + Repository.DEBUG  + "\n");
-
-	if (StringUtils.isBlank(solution)) {
-		returnList.setError(Boolean.valueOf(true));
-		returnList.setError_message("FastSync: Missing parameter.");
-		returnList.setMessage("Parameter solution not defined.");
-		return returnList;
-	}
-	if ("system".equalsIgnoreCase(solution)) {
-		returnList.setError(Boolean.valueOf(true));
-		returnList.setError_message("FastSync: Invalid solution.");
-		returnList.setMessage("System folder can not be synchronized.");
-		return returnList;
-	}
-
-	String path = ((String) info.getQueryParameters().getFirst("path")).replaceAll("/+", "/").replaceAll(":+", "/")
-	.replaceAll("\\\\+", "/");
-	Repository.SYNC = id;
-
-
-	if (path != null) {
-		path = path.toLowerCase();
-	}
-	if (StringUtils.isBlank(path)) {
-		path = "public";
-	}
-
-	StringUtils.startsWith(path, "/");
-	StringUtils.removeEnd(path, "/");
-
-	boolean keepNewerFlag = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("keepNewerFlag"));
-	tmpDir = FileSystem.getTmpDir(solution);
-	if (Repository.DEBUG) {
-		System.out.println("\n----->  tmpDir list: " + tmpDir + "\n");
-		System.out.println("\n----->  Sync: " + Repository.SYNC + "\n");
 
 	}
 
-	try {
-		if ("jcr".equalsIgnoreCase(Repository.SYNC)) {
-			listJcr(solution, path, returnList, keepNewerFlag, tmpDir, withManifest, userAgent);
-		} else if ("fs".equalsIgnoreCase(Repository.SYNC)) {
-			listFs(solution, path, returnList, keepNewerFlag, tmpDir, withManifest, userAgent);
-		} else {
+	@GET
+	@Path("/sync/list/{id}")
+	@Produces({ "application/json" })
+	public ReturnFileList listSync(@Context UriInfo info, @HeaderParam("user-agent") String userAgent,
+			@PathParam("id") String id) {
+		ReturnFileList returnList = new ReturnFileList();
+
+		String solution = ((String) info.getQueryParameters().getFirst("solution")).replaceAll("/+", "")
+				.replaceAll(":+", "").replaceAll("\\\\+", "");
+
+		String withManifest = (String) info.getQueryParameters().getFirst("withManifest");
+		;
+		String tmpDir = FileSystem.getTmpDir(solution).replaceAll("\\\\+", "/").replaceAll("/+", "/");
+
+		Repository.DEBUG = "True".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
+
+		System.out.println("\n-----> debug: " + Repository.DEBUG + "\n");
+
+		if (StringUtils.isBlank(solution)) {
 			returnList.setError(Boolean.valueOf(true));
-			returnList.setError_message("FastSync: Invalid URL.");
-			returnList.setMessage("/sync/list/" + id + " not defined.");
+			returnList.setError_message("FastSync: Missing parameter.");
+			returnList.setMessage("Parameter solution not defined.");
+			return returnList;
+		}
+		if ("system".equalsIgnoreCase(solution)) {
+			returnList.setError(Boolean.valueOf(true));
+			returnList.setError_message("FastSync: Invalid solution.");
+			returnList.setMessage("System folder can not be synchronized.");
+			return returnList;
 		}
 
-		returnList.setError(Boolean.valueOf(false));
-		returnList.setMessage("Synchronize to JCR from FileSystem.");
-	} catch (UnifiedRepositoryAccessDeniedException e) {
-		returnList.setError(Boolean.valueOf(true));
-		returnList.setError_message(e.getMessage());
-		returnList.setMessage("FastSync: Access denied. Check folder permissions.");
-		e.printStackTrace();
-	} catch (CannotCreateTransactionException e) {
-		returnList.setError(Boolean.valueOf(true));
-		returnList.setError_message(e.getMessage());
-		returnList.setMessage("FastSync: Access denied for anonymous user.");
-		e.printStackTrace();
-	} catch (Exception e) {
-		returnList.setError(Boolean.valueOf(true));
-		returnList.setError_message(e.getMessage());
-		returnList.setMessage("FastSync: Internal Server Error");
-		e.printStackTrace();
-	} catch (Throwable e) {
-		returnList.setError(Boolean.valueOf(true));
-		returnList.setError_message(e.getMessage());
-		returnList.setMessage("FastSync: Internal Server Error");
-		e.printStackTrace();
+		String path = ((String) info.getQueryParameters().getFirst("path")).replaceAll("/+", "/").replaceAll(":+", "/")
+				.replaceAll("\\\\+", "/");
+		Repository.SYNC = id;
 
+		if (path != null) {
+			path = path.toLowerCase();
+		}
+		if (StringUtils.isBlank(path)) {
+			path = "public";
+		}
+
+		StringUtils.startsWith(path, "/");
+		StringUtils.removeEnd(path, "/");
+
+		boolean keepNewerFlag = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("keepNewerFlag"));
+
+		Repository.TEMP_DIR = FileSystem.getTmpDir(solution);
+		Repository.SOLUTION = File.separator + solution;
+		if (Repository.DEBUG) {
+			System.out.println("\n----->  tmpDir list: " + Repository.TEMP_DIR + "\n");
+			System.out.println("\n----->  Sync: " + Repository.SYNC + "\n");
+			System.out.println("\n----->  Solution: " + Repository.SOLUTION + "\n");
+		}
+
+		try {
+			if ("jcr".equalsIgnoreCase(Repository.SYNC)) {
+				listJcr(solution, path, returnList, keepNewerFlag, withManifest, userAgent);
+			} else if ("fs".equalsIgnoreCase(Repository.SYNC)) {
+				listFs(solution, path, returnList, keepNewerFlag, tmpDir, withManifest, userAgent);
+			} else {
+				returnList.setError(Boolean.valueOf(true));
+				returnList.setError_message("FastSync: Invalid URL.");
+				returnList.setMessage("/sync/list/" + id + " not defined.");
+			}
+
+			returnList.setError(Boolean.valueOf(false));
+			returnList.setMessage("Synchronize to JCR from FileSystem.");
+		} catch (UnifiedRepositoryAccessDeniedException e) {
+			returnList.setError(Boolean.valueOf(true));
+			returnList.setError_message(e.getMessage());
+			returnList.setMessage("FastSync: Access denied. Check folder permissions.");
+			e.printStackTrace();
+		} catch (CannotCreateTransactionException e) {
+			returnList.setError(Boolean.valueOf(true));
+			returnList.setError_message(e.getMessage());
+			returnList.setMessage("FastSync: Access denied for anonymous user.");
+			e.printStackTrace();
+		} catch (Exception e) {
+			returnList.setError(Boolean.valueOf(true));
+			returnList.setError_message(e.getMessage());
+			returnList.setMessage("FastSync: Internal Server Error");
+			e.printStackTrace();
+		} catch (Throwable e) {
+			returnList.setError(Boolean.valueOf(true));
+			returnList.setError_message(e.getMessage());
+			returnList.setMessage("FastSync: Internal Server Error");
+			e.printStackTrace();
+
+		}
+
+		return returnList;
 	}
-
-	return returnList;
-}
 }

@@ -11,6 +11,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -50,6 +54,7 @@ public class FileSystem {
 	}
 
 	public static boolean deleteFile(String fileName) {
+		
 		boolean success = new File(fileName).delete();
 
 		if (!success) {
@@ -61,6 +66,7 @@ public class FileSystem {
 
 	public static boolean deleteFile(File fileName) {
 		boolean success = fileName.delete();
+		
 
 		if (!success) {
 			return false;
@@ -195,24 +201,30 @@ public class FileSystem {
 		}
 	}
 
-	public static void writeToFile(ByteArrayOutputStream outputStream, String directory, String fileName)
-			throws Exception {
+	public static void writeToFile(ByteArrayOutputStream outputStream, String fileName) throws IOException  {
 		FileOutputStream fop = null;
 
 		try {
-			File file = new File(directory + File.separator + fileName);
-			fop = new FileOutputStream(file);
+			File file = new File(Repository.TEMP_DIR + File.separator + fileName);
+			File folder = new File(Repository.TEMP_DIR );
+			
+			if (!folder.exists()) {
+				folder.mkdir();
+			}
 
 			if (!file.exists()) {
 				file.createNewFile();
 			}
+			
+			
+			fop = new FileOutputStream(file);
 
 			byte[] contentInBytes = outputStream.toByteArray();
 
 			fop.write(contentInBytes);
 			fop.flush();
 			fop.close();
-			System.out.println("\n file write : \n"+directory + File.separator + fileName);
+			System.out.println("\n file write : \n" + Repository.TEMP_DIR + File.separator + fileName);
 			System.out.println("\n *****Done****** \n ");
 		} finally {
 			if (fop != null) {
@@ -223,7 +235,6 @@ public class FileSystem {
 
 	public static String getTmpDir(String location) {
 		String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + location;
-		
 
 		File dir = new File(tmpDir);
 
@@ -247,56 +258,111 @@ public class FileSystem {
 		File file = new File(path);
 		return file.exists();
 	}
-	
-	public static boolean isFilesDiffs(String file1, String file2) {
-        File f1 = new File(file1);
-        File f2 = new File(file2);
-        byte[] f1_buf = new byte[1048576];
-        byte[] f2_buf = new byte[1048576];
-        int len;
-        if (f1.length() != f2.length()) {
-            try {
-                InputStream isf1 = new FileInputStream(f1);
-                InputStream isf2 = new FileInputStream(f2);
-                try {
-                    while (isf1.read(f1_buf) >= 0) {
-                        len=isf2.read(f2_buf);
-                        for (int j = 0; j < len; j++) {
-                            if (f1_buf[j] != f2_buf[j]) {
-                                return true; // tamanho diferente e  conteudo diferente
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                }
-            } catch (FileNotFoundException e) {
-            }
-        } 
-        return false; // arquivos iguais
-    }
 
-	@SuppressWarnings("unused")
-	public static boolean diffContentFiles(final List<String> firstFileContent, final List<String> secondFileContent) {
-		final List<String> diff = new ArrayList<String>();
-		boolean filesDiff = false;
-		int i =0;
-
-		for (final String line : secondFileContent) {
-			//&& !line.contentEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-			if (!firstFileContent.contains(line)  ) {
-				// diff.add(line);
-				if (Repository.DEBUG) {
-					System.out.println("\n-----> line firstFileContent Diff: " + firstFileContent+"\n ------>"+firstFileContent.size()+"firstFileContent size \n");
-					System.out.println("\n-----> line secondFileContent Diff: " + secondFileContent+"\n ------>"+secondFileContent.size()+"secondFileContent size \n");
-					System.out.println("\n-----> line fileSystem Diff: " + line);
-					System.out.println("\n-----> line index: " + i);
-				}
-				filesDiff = true;
-				break;
+	public static boolean isDiffForTypeFile(String file1, String file2) throws IOException {
+		String ext = file1.substring(file1.length() - 3);
+		if (ext.equalsIgnoreCase("ktr") || ext.equalsIgnoreCase("kjb")) {
+			if (Repository.SYNC.equals("fs")) {
+				return diffFiles2(file2,file1);
+			}else{
+				return diffFiles2(file1,file2);
 			}
-			i++;
+			
+		} else {
+			return isFilesDiffs(file1, file2);
 		}
 		
+		//return isFilesDiffs(file1, file2);
+
+	}
+
+	public static boolean isFilesDiffs(String file1, String file2) {
+		File f1 = new File(file1);
+		File f2 = new File(file2);
+		byte[] f1_buf = new byte[1048576];
+		byte[] f2_buf = new byte[1048576];
+		int len;
+		if (f1.length() != f2.length()) {
+			try {
+				InputStream isf1 = new FileInputStream(f1);
+				InputStream isf2 = new FileInputStream(f2);
+				try {
+					while (isf1.read(f1_buf) >= 0) {
+						len = isf2.read(f2_buf);
+						for (int j = 0; j < len; j++) {
+							if (f1_buf[j] != f2_buf[j]) {
+								System.out.println("\n-----> f1_buf[j]: " + f1_buf[j]);
+								System.out.println("\n-----> f2_buf[j]: " + f2_buf[j]);
+								return true; // tamanho diferente e conteudo
+												// diferente
+							}
+						}
+					}
+				} catch (IOException e) {
+				}
+			} catch (FileNotFoundException e) {
+			}
+		}
+		return false; // arquivos iguais
+	}
+
+	
+	public static boolean diffFiles2(String f1, String f2) throws IOException {
+		boolean filesDiff = false;
+		final Path _f1 = Paths.get(f1.toString());
+		final Path _f2 = Paths.get(f2.toString());
+		List<String> fileSystem = Files.readAllLines(_f1, Charset.forName("UTF-8"));
+		List<String> jcr = Files.readAllLines(_f2, Charset.forName("UTF-8"));
+		int i = 0;
+		if (f1.length() != f2.length()) {
+			for (String line : jcr) {
+				if (!fileSystem.contains(line)) {
+					// System.out.println("\n-----> conteudo jcr: " +
+					// line.trim());
+					if (line.contains("<directory>") || line.contains("<directory />") || line.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+							|| line.contains("<modified_date>") || line.contains("<xloc>") || line.contains("<yloc>")
+							|| line.contains("partitionschema") || line.contains("dynamic")
+							|| line.contains("partitions_per_slave") || line.contains("slaveserver")
+							|| line.contains("master") || line.contains("hostname") || line.contains("port")
+							|| line.contains("key_for_session_key")) {
+						filesDiff = false;
+						continue;
+					}
+					System.out.println("\n-----> conteudo line: " + line.trim());
+					System.out.println("\n-----> conteudo : " + fileSystem);
+					System.out.println("\n-----> index : " + i);
+					filesDiff = true;
+					break;
+				}
+				i++;
+			}
+			if(!filesDiff){
+				i = 0;
+				for (String line : fileSystem) {
+					if (!jcr.contains(line)) {
+						// System.out.println("\n-----> conteudo jcr: " +
+						// line.trim());
+						if (line.contains("<directory>") || line.contains("<directory />") || line.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+								|| line.contains("<modified_date>") || line.contains("<xloc>") || line.contains("<yloc>")
+								|| line.contains("partitionschema") || line.contains("dynamic")
+								|| line.contains("partitions_per_slave") || line.contains("slaveserver")
+								|| line.contains("master") || line.contains("hostname") || line.contains("port")
+								|| line.contains("key_for_session_key")) {
+							filesDiff = false;
+							continue;
+						}
+						System.out.println("\n-----> conteudo line: " + line.trim());
+						System.out.println("\n-----> conteudo : " + fileSystem);
+						System.out.println("\n-----> index : " + i);
+						filesDiff = true;
+						break;
+					}
+					i++;
+				}
+			}
+		}
+		
+	
 		
 		return filesDiff;
 	}

@@ -1,28 +1,28 @@
-angular.module('app').controller("appCtrl", function ($scope, $http, pentahoService) { 
+angular.module('app').controller("appCtrl", function ($scope, $http, pentahoService) {
 
 	$scope.exclude  = [];
 	$scope.create   = [];
 	$scope.update   = [];
 	$scope.delete   = [];
 	$scope.preserve = [];
-	
+
 	$scope.messageAlert;
-	
+
 	$scope.loading = false;
-	
+
 	$scope.showFlag = false;
-	
+
 	$scope.form = {
 		checkboxModel: {
 			jcr: {
 				'delete': true,
 				'deletePerm': true
-				
+
 			},
 			fs: {
 				'delete': true,
 				'manifest': false
-				
+
 			},
 			'keep': true
 		},
@@ -33,13 +33,13 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	$scope.getList = function (switchFlag, solution, path, keepFlag, debug) {
 
 		$scope.loading = true;
-		
+
 		var api = "fs";
-		
+
 		if (switchFlag) api = "jcr";
-		
+
 		pentahoService.getList(api, solution, path, keepFlag, debug).success(function (data) {
-			if (data.error == 'false') 
+			if (data.error == 'false')
 			{
 				if (typeof data.create === "string") {
 					var x = [];
@@ -61,7 +61,7 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 					x.push(data.exclude);
 					data.exclude = x;
 				}
-			
+
 				if (typeof data.preserve === "string") {
 					var x = [];
 					x.push(data.preserve);
@@ -79,7 +79,7 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 				$scope.updateSize   = (data.update  == undefined) ? 0 : data.update.length;
 				$scope.deleteSize   = (data.delete  == undefined) ? 0 : data.delete.length;
 				$scope.preserveSize = (data.preserve  == undefined) ? 0 : data.preserve.length;
-				
+
 				$scope.showFlag = true;
 			}
 			else
@@ -87,10 +87,10 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 				$scope.showFlag = false;
 				setMessageAlert(data.message + ": " + data.error_message, data.error);
 			}
-				
+
 		}).error(function (data, status) {
 			setMessageAlert("Aconteceu um problema: " + data, "true");
-		
+
 		}).finally(function() {
 			$scope.loading = false;
 		});
@@ -99,13 +99,13 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	$scope.sync = function (switchFlag, solution, path, del, delPerm, debug, keepFlag) {
 
 		$scope.loading = true;
-		
+
 		var api = "fs";
-		
+
 		if (switchFlag) api = "jcr";
 
 		pentahoService.sync(api, solution, path, del, delPerm, debug, keepFlag).success(function (data) {
-			if (data.error == 'false') 
+			if (data.error == 'false')
 			{
 				setMessageAlert(data.message, data.error);
 				$scope.getList(switchFlag, solution, path, keepFlag,debug);
@@ -114,27 +114,27 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 			{
 				setMessageAlert(data.message + ": " + data.error_message, "true");
 			}
-				
+
 		}).error(function (data, status) {
 			setMessageAlert("Aconteceu um problema: " + data, "true");
-		
+
 		}).finally(function() {
 			$scope.loading = false;
-		});				
+		});
 	};
-	
+
 	$scope.collapse = {};
 	$scope.collapse.cr = "collapse";
 	$scope.collapse.de = "collapse";
 	$scope.collapse.up = "collapse";
 	$scope.collapse.ex = "collapse";
 	$scope.collapse.pr = "collapse";
-	
+
 	$scope.setCollapse = function(id) {
 		($scope.collapse[id].length == 0) ? ($scope.collapse[id] = "collapse") : ($scope.collapse[id] = "");
 	};
-	
-	var setMessageAlert = function(msg, error) 
+
+	var setMessageAlert = function(msg, error)
 	{
 		$("#message-box").removeClass();
 
@@ -142,7 +142,7 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 			$("#message-box").addClass("alert alert-danger");
 		else
 			$("#message-box").addClass("alert alert-success");
-		
+
 		$("#message-alert").html(msg);
 
 		$("#message-box").alert();
@@ -150,5 +150,5 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 			$("#message-box").hide();
 		});
 	};
-	
+
 });
