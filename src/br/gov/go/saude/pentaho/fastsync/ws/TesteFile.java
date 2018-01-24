@@ -46,7 +46,7 @@ public class TesteFile {
 		// System.out.println("\n-----> file to be lista: " + lista.isEmpty() +
 		// "\n");
 
-		if (TesteFile.diffFiles2(jcr,fileSystem)) {
+		if (TesteFile.diffFiles2(jcr, fileSystem)) {
 			System.out.println("\n-----> file to be updated: " + fileSystem.replaceAll(":", "/") + "\n");
 		}
 		// ;
@@ -123,7 +123,8 @@ public class TesteFile {
 				if (!fileSystem.contains(line)) {
 					// System.out.println("\n-----> conteudo jcr: " +
 					// line.trim());
-					if (line.contains("<directory>") || line.contains("<directory />") || line.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+					if (line.contains("<directory>") || line.contains("<directory />")
+							|| line.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
 							|| line.contains("<modified_date>") || line.contains("<xloc>") || line.contains("<yloc>")
 							|| line.contains("partitionschema") || line.contains("dynamic")
 							|| line.contains("partitions_per_slave") || line.contains("slaveserver")

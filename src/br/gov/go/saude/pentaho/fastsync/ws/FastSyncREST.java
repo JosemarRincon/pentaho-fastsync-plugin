@@ -198,8 +198,9 @@ public class FastSyncREST {
 		// File dstDir = new File(Repository.TEMP_DIR + File.separator +
 		// Repository.SOLUTION + File.separator + path + File.separator
 		// + solution + File.separator);
-		
-		String dstCopyFull = Repository.TEMP_DIR + File.separator + Repository.SOLUTION + File.separator+ Repository.SOLUTION + File.separator;
+
+		String dstCopyFull = Repository.TEMP_DIR + File.separator + Repository.SOLUTION + File.separator
+				+ Repository.SOLUTION + File.separator;
 		File dstDir = new File(dstCopyFull);
 
 		if (Repository.DEBUG) {
@@ -228,10 +229,10 @@ public class FastSyncREST {
 			//System.out.println("\n----->  remove preserved dstTarget+item syncJcr: " + dstTarget + item + "\n");
 			File file = new File(dstTarget + item);
 
-//			if ((file.isFile()) || (FileSystem.isDirectoryEmpty(file))) {
-//				FileSystem.deleteFile(file);
-//			}
-			if ((file.isFile()) ) {
+			//			if ((file.isFile()) || (FileSystem.isDirectoryEmpty(file))) {
+			//				FileSystem.deleteFile(file);
+			//			}
+			if ((file.isFile())) {
 				FileSystem.deleteFile(file);
 			}
 		}
@@ -256,13 +257,14 @@ public class FastSyncREST {
 			//zipPack.setPackDirectoryPath((dstTargetFull).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
 			zipPack.setPackDirectoryPath((dstTarget).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
 			zipPack.packDirectory();
-			
+
 			if (Repository.DEBUG) {
-				System.out.println("\n----->  tmpDir para JRC: " + (dstCopyFull).replaceAll("\\\\+", "/").replaceAll("/+", "/") + "\n");
+				System.out.println("\n----->  tmpDir para JRC: "
+						+ (dstCopyFull).replaceAll("\\\\+", "/").replaceAll("/+", "/") + "\n");
 				System.out.println("\n----->  fullZipName para enviar pro JRC: " + fullZipName + "\n");
 				System.out.println("\n----->  solution: " + Repository.SOLUTION + "\n");
 			}
-			 Repository.importFileToJcr(fullZipName, zipName);
+			Repository.importFileToJcr(fullZipName, zipName);
 		}
 
 		output.setError(Boolean.valueOf(false));
@@ -294,7 +296,7 @@ public class FastSyncREST {
 		}
 		ReturnFileList listFiles = new ReturnFileList();
 		try {
-			
+
 			solutionPath = solutionPath + Repository.SOLUTION;
 			// if (keepNewerFlag) {
 			listFs(solution, path, listFiles, keepNewerFlag, tmpDir, withManifest, userAgent);
@@ -303,7 +305,7 @@ public class FastSyncREST {
 			// Repository.exportFileToFs(userAgent, location, withManifest,
 			// tmpDir,
 			// solutionPath, listFiles.getPreserve());
-			
+
 		} finally {
 			System.out.println("\n----->  solutionPath FS: " + solutionPath + "\n");
 			Repository.exportFileToFs2(solutionPath, location, listFiles);
@@ -528,8 +530,8 @@ public class FastSyncREST {
 			}
 			Collection<String> updateList = new ArrayList<>();
 
-			Repository.getFilesFromJcr(userAgent, withManifest);
 			if (Repository.isJcrPathExists(Repository.SOLUTION)) {
+				Repository.getFilesFromJcr(userAgent, withManifest);
 				System.out.println("\n----->  Solution sync: " + Repository.SOLUTION + "\n");
 
 				updateList = Repository.addFilesModifidied(
@@ -583,13 +585,11 @@ public class FastSyncREST {
 	public void listFs(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag, String tmpDir,
 			String withManifest, String userAgent) throws Throwable {
 		String base = "/".equals(path) ? "" : path;
+		String location = (path + "/" + solution).replaceAll("/+", "/");
+		Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
 
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
 				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
-
-		String location = (path + "/" + solution).replaceAll("/+", "/");
-
-		Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
 
 		Repo repoMaps = Repository.getRepoFiles(location.replaceAll("/", ":") + ":");
 
@@ -634,27 +634,29 @@ public class FastSyncREST {
 			System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
 			System.out.println("\n-----> userAgent: " + userAgent + "\n");
 		}
+		Collection<String> updateList = null;
+		if (Repository.isJcrPathExists(Repository.SOLUTION)) {
+			Repository.getFilesFromJcr(userAgent, withManifest);
+			updateList = Repository.addFilesModifidied(
+					Repository.getDiff(Repository.getDiff(localFiles, excludeList), createList),
+					PentahoSystem.getApplicationContext().getSolutionPath(""), repoMaps.getModifiedDateList(), base);
 
-		Repository.getFilesFromJcr(userAgent, withManifest);
-		Collection<String> updateList = Repository.addFilesModifidied(
-				Repository.getDiff(Repository.getDiff(localFiles, excludeList), createList),
-				PentahoSystem.getApplicationContext().getSolutionPath(""), repoMaps.getModifiedDateList(), base);
-
-		if (keepNewerFlag) {
-			Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
-					updateList);
-			for (String item : preserveList) {
-				if (Repository.isJcrPathExists(item)) {
-					if (!Repository.getJcrPathProperties(base + item).isFolder()) {
-						returnList.getPreserve().add(item);
-						Repository.removeFilePreservedList(item);
+			if (keepNewerFlag) {
+				Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
+						updateList);
+				for (String item : preserveList) {
+					if (Repository.isJcrPathExists(item)) {
+						if (!Repository.getJcrPathProperties(base + item).isFolder()) {
+							returnList.getPreserve().add(item);
+							Repository.removeFilePreservedList(item);
+						}
 					}
 				}
-			}
-			Repository.newZipForUpdate();
+				Repository.newZipForUpdate();
 
-		} else {
-			updateList = Repository.getDiff(localFiles, excludeList);
+			} else {
+				updateList = Repository.getDiff(localFiles, excludeList);
+			}
 		}
 
 		if (Repository.DEBUG) {

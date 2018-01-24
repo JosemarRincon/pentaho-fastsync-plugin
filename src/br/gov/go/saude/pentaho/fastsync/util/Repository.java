@@ -365,7 +365,7 @@ public class Repository {
 		return excludeList;
 	}
 
-	public static RepositoryFileDto getJcrPathProperties(String location) throws FileNotFoundException {
+	public static RepositoryFileDto getJcrPathProperties(String location) throws FileNotFoundException,IOException {
 		location = location.replaceAll("/+", ":").replaceAll("\\\\+", ":") + ":";
 		location = location.replaceAll(":+", ":");
 
@@ -379,8 +379,8 @@ public class Repository {
 
 			return repositoryFileDto;
 		} catch (FileNotFoundException e) {
-
-			throw new FileNotFoundException("JCR path '" + location + "' not found.");
+			FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
+			throw new FileNotFoundException("JCR path '" + location.replaceAll(":", "") + "' not found.");
 		}
 	}
 
