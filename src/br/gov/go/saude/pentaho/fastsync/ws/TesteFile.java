@@ -13,17 +13,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-
-import br.gov.go.saude.pentaho.fastsync.util.FileSystem;
-import br.gov.go.saude.pentaho.fastsync.util.Repository;
 import br.gov.go.saude.pentaho.fastsync.util.Zip;
 
 public class TesteFile {
@@ -35,8 +30,8 @@ public class TesteFile {
 		// String jcr =
 		// "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7/paineis/boletim.cdfde";
 
-		String fileSystem = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/pentaho-solutions/siconti7/cargas/CtrlCarga.kjb";
-		String jcr = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7/cargas/CtrlCarga.kjb";
+		String fileSystem = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/pentaho-solutions/siconti7/paineis/res/js/scripts.js";
+		String jcr = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7/paineis/res/js/scripts.js";
 		String dstTaget = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/";
 		String dstCPFull = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7//siconti7/";
 		String dstTagetFull = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7/";
@@ -45,10 +40,11 @@ public class TesteFile {
 		// lista.toString();
 		// System.out.println("\n-----> file to be lista: " + lista.isEmpty() +
 		// "\n");
-
-		if (TesteFile.diffFiles2(jcr, fileSystem)) {
-			System.out.println("\n-----> file to be updated: " + fileSystem.replaceAll(":", "/") + "\n");
-		}
+		/*
+		 * if (TesteFile.diffFiles2(jcr, fileSystem)) {
+		 * System.out.println("\n-----> file to be updated: " +
+		 * fileSystem.replaceAll(":", "/") + "\n"); }
+		 */
 		// ;
 		// File dstDir = new File(dstCPFull);
 		// try {
@@ -58,6 +54,8 @@ public class TesteFile {
 		// } finally {
 		// zip(dstTaget, dstTagetFull);
 		// }
+
+		isFilesDiffs(jcr, fileSystem);
 
 	}
 
@@ -146,37 +144,65 @@ public class TesteFile {
 		return filesDiff;
 	}
 
-	public static boolean isFilesDiffs(String file1, String file2) {
+	@SuppressWarnings("resource")
+	public static boolean isFilesDiffs(String file1, String file2) throws IOException, FileNotFoundException {
 		File f1 = new File(file1);
 		File f2 = new File(file2);
 		byte[] f1_buf = new byte[1048576];
 		byte[] f2_buf = new byte[1048576];
 		int len;
+		boolean diff = false;
 		if (f1.length() != f2.length()) {
-			System.out.println("\n-----> entro: " + f1.length());
-			System.out.println("\n-----> entro: " + f2.length());
+			InputStream isf1 = null;
+			InputStream isf2 = null;
+
+			isf1 = new FileInputStream(f1);
+			isf2 = new FileInputStream(f2);
 			try {
-				InputStream isf1 = new FileInputStream(f1);
-				InputStream isf2 = new FileInputStream(f2);
-				try {
+
+				while (isf1.read(f1_buf) >= 0) {
+					len = isf2.read(f2_buf);
+					for (int j = 0; j < len; j++) {
+						if (f1_buf[j] != f2_buf[j]) {
+							System.out.println("\n-----> f1_buf[j]: " + f1_buf[j]);
+							System.out.println("\n-----> f2_buf[j]: " + f2_buf[j]);
+							diff = true;
+							break; // tamanho diferente e conteudo
+									// diferente
+						}
+					}
+				}
+				if (!diff) {
+					
+					isf1 = new FileInputStream(f2);
+					isf2 = new FileInputStream(f1);
+					f1_buf =  new byte[1048576];
+					f2_buf =  new byte[1048576];
+
 					while (isf1.read(f1_buf) >= 0) {
 						len = isf2.read(f2_buf);
 						for (int j = 0; j < len; j++) {
 							if (f1_buf[j] != f2_buf[j]) {
-
 								System.out.println("\n-----> f1_buf[j]: " + f1_buf[j]);
 								System.out.println("\n-----> f2_buf[j]: " + f2_buf[j]);
-								return true; // tamanho diferente e conteudo
-												// diferente
+								diff = true;
+								break; // tamanho diferente e conteudo diferente
+
 							}
 						}
 					}
-				} catch (IOException e) {
+
 				}
-			} catch (FileNotFoundException e) {
+
+				isf1.close();
+				isf2.close();
+
+			} catch (FileNotFoundException ex) {
+				throw new IOException(ex);
 			}
+
 		}
-		return false; // arquivos iguais
+		return diff; // arquivos iguais
 	}
 
 	public static String md5(String input) {
