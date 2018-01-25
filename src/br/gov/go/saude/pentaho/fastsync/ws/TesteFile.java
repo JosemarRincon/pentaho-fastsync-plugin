@@ -32,10 +32,10 @@ public class TesteFile {
 
 		String fileSystem = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/pentaho-solutions/siconti7/paineis/res/js/scripts.js";
 		String jcr = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7/paineis/res/js/scripts.js";
-		String dstTaget = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/";
-		String dstCPFull = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7//siconti7/";
-		String dstTagetFull = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7/";
-
+		/* 	String dstTaget = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/";
+			String dstCPFull = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7//siconti7/";
+			String dstTagetFull = "/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/tomcat/temp/siconti7/siconti7/";
+		*/
 		// ArrayList<String> lista = new ArrayList<>();
 		// lista.toString();
 		// System.out.println("\n-----> file to be lista: " + lista.isEmpty() +
@@ -58,7 +58,7 @@ public class TesteFile {
 		isFilesDiffs(jcr, fileSystem);
 
 	}
-	
+
 	public static boolean isFilesDiffs(String file1, String file2) throws IOException, FileNotFoundException {
 		File f1 = new File(file1);
 		File f2 = new File(file2);
@@ -186,13 +186,11 @@ public class TesteFile {
 		boolean filesDiff = false;
 		filesDiff = compareEspecificFiles(f1, f2);
 		if (!filesDiff) {
-			filesDiff=compareEspecificFiles(f2, f1);
+			filesDiff = compareEspecificFiles(f2, f1);
 		}
 
 		return filesDiff;
 	}
-
-	
 
 	public static String md5(String input) {
 		String md5 = null;

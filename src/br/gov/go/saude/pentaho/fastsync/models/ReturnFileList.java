@@ -19,11 +19,11 @@ public class ReturnFileList {
 		setError(Boolean.valueOf(false));
 		setError_message("");
 
-		this.update = new ArrayList();
-		this.create = new ArrayList();
-		this.delete = new ArrayList();
-		this.exclude = new ArrayList();
-		setPreserve(new ArrayList());
+		this.update = new ArrayList<String>();
+		this.create = new ArrayList<String>();
+		this.delete = new ArrayList<String>();
+		this.exclude = new ArrayList<String>();
+		setPreserve(new ArrayList<String>());
 	}
 
 	public ArrayList<String> getUpdate() {
