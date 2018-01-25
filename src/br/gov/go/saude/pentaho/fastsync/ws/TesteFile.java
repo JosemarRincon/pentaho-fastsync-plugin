@@ -58,6 +58,46 @@ public class TesteFile {
 		isFilesDiffs(jcr, fileSystem);
 
 	}
+	
+	public static boolean isFilesDiffs(String file1, String file2) throws IOException, FileNotFoundException {
+		File f1 = new File(file1);
+		File f2 = new File(file2);
+		boolean diff = false;
+		if (f1.length() != f2.length()) {
+			InputStream isf1 = null;
+			InputStream isf2 = null;
+			isf1 = new FileInputStream(f1);
+			isf2 = new FileInputStream(f2);
+			try {
+				diff = compareStreams(isf1, isf2);
+				if (!diff) {
+					diff = compareStreams(isf2, isf1);
+				}
+			} catch (FileNotFoundException ex) {
+				throw new IOException(ex);
+			}
+		}
+		return diff; // arquivos iguais
+	}
+
+	public static boolean compareStreams(InputStream isf1, InputStream isf2) throws IOException {
+		int len;
+		byte[] f1_buf = new byte[1048576];
+		byte[] f2_buf = new byte[1048576];
+		while (isf1.read(f1_buf) >= 0) {
+			len = isf2.read(f2_buf);
+			for (int j = 0; j < len; j++) {
+				if (f1_buf[j] != f2_buf[j]) { // tamanho diferente e conteudo diferente
+					System.out.println("\n-----> inputStrem 1: " + f1_buf[j]);
+					System.out.println("\n-----> inputStrem 2: " + f2_buf[j]);
+					return true;
+				}
+			}
+		}
+		isf1.close();
+		isf2.close();
+		return false;
+	}
 
 	public static void zip(String dstTarget, String dstTargetFull) {
 
@@ -109,18 +149,16 @@ public class TesteFile {
 
 	}
 
-	public static boolean diffFiles2(String f1, String f2) throws IOException {
+	public static boolean compareEspecificFiles(String file1, String file2) throws IOException {
 		boolean filesDiff = false;
-		final Path _f1 = Paths.get(f1.toString());
-		final Path _f2 = Paths.get(f2.toString());
-		List<String> fileSystem = Files.readAllLines(_f1, Charset.forName("UTF-8"));
-		List<String> jcr = Files.readAllLines(_f2, Charset.forName("UTF-8"));
+		final Path _f1 = Paths.get(file1.toString());
+		final Path _f2 = Paths.get(file2.toString());
+		List<String> jcr = Files.readAllLines(_f1, Charset.forName("UTF-8"));
+		List<String> fileSystem = Files.readAllLines(_f2, Charset.forName("UTF-8"));
 		int i = 0;
-		if (f1.length() != f2.length()) {
+		if (file1.length() != file2.length()) {
 			for (String line : jcr) {
 				if (!fileSystem.contains(line)) {
-					// System.out.println("\n-----> conteudo jcr: " +
-					// line.trim());
 					if (line.contains("<directory>") || line.contains("<directory />")
 							|| line.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
 							|| line.contains("<modified_date>") || line.contains("<xloc>") || line.contains("<yloc>")
@@ -140,70 +178,21 @@ public class TesteFile {
 				i++;
 			}
 		}
+		return filesDiff;
+
+	}
+
+	public static boolean diffFiles2(String f1, String f2) throws IOException {
+		boolean filesDiff = false;
+		filesDiff = compareEspecificFiles(f1, f2);
+		if (!filesDiff) {
+			filesDiff=compareEspecificFiles(f2, f1);
+		}
 
 		return filesDiff;
 	}
 
-	@SuppressWarnings("resource")
-	public static boolean isFilesDiffs(String file1, String file2) throws IOException, FileNotFoundException {
-		File f1 = new File(file1);
-		File f2 = new File(file2);
-		byte[] f1_buf = new byte[1048576];
-		byte[] f2_buf = new byte[1048576];
-		int len;
-		boolean diff = false;
-		if (f1.length() != f2.length()) {
-			InputStream isf1 = null;
-			InputStream isf2 = null;
-
-			isf1 = new FileInputStream(f1);
-			isf2 = new FileInputStream(f2);
-			try {
-
-				while (isf1.read(f1_buf) >= 0) {
-					len = isf2.read(f2_buf);
-					for (int j = 0; j < len; j++) {
-						if (f1_buf[j] != f2_buf[j]) {
-							System.out.println("\n-----> f1_buf[j]: " + f1_buf[j]);
-							System.out.println("\n-----> f2_buf[j]: " + f2_buf[j]);
-							diff = true;
-							break; // tamanho diferente e conteudo
-									// diferente
-						}
-					}
-				}
-				if (!diff) {
-					
-					isf1 = new FileInputStream(f2);
-					isf2 = new FileInputStream(f1);
-					f1_buf =  new byte[1048576];
-					f2_buf =  new byte[1048576];
-
-					while (isf1.read(f1_buf) >= 0) {
-						len = isf2.read(f2_buf);
-						for (int j = 0; j < len; j++) {
-							if (f1_buf[j] != f2_buf[j]) {
-								System.out.println("\n-----> f1_buf[j]: " + f1_buf[j]);
-								System.out.println("\n-----> f2_buf[j]: " + f2_buf[j]);
-								diff = true;
-								break; // tamanho diferente e conteudo diferente
-
-							}
-						}
-					}
-
-				}
-
-				isf1.close();
-				isf2.close();
-
-			} catch (FileNotFoundException ex) {
-				throw new IOException(ex);
-			}
-
-		}
-		return diff; // arquivos iguais
-	}
+	
 
 	public static String md5(String input) {
 		String md5 = null;

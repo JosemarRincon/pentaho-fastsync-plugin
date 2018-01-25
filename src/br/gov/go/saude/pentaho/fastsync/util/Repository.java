@@ -1,21 +1,11 @@
 package br.gov.go.saude.pentaho.fastsync.util;
 
-import br.gov.go.saude.pentaho.fastsync.engine.PluginConfig;
-import br.gov.go.saude.pentaho.fastsync.models.Repo;
-import br.gov.go.saude.pentaho.fastsync.models.ReturnFileList;
-
-import com.sun.jersey.core.header.FormDataContentDisposition;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,19 +18,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+
+import com.sun.jersey.core.header.FormDataContentDisposition;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.platform.api.engine.PentahoAccessControlException;
-import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.web.http.api.resources.RepositoryImportResource;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 import org.zeroturnaround.zip.NameMapper;
 import org.zeroturnaround.zip.ZipUtil;
+
+import br.gov.go.saude.pentaho.fastsync.engine.PluginConfig;
+import br.gov.go.saude.pentaho.fastsync.models.Repo;
+import br.gov.go.saude.pentaho.fastsync.models.ReturnFileList;
 
 public class Repository {
 	private static FileService fileService = null;
@@ -257,10 +252,8 @@ public class Repository {
 
 			}
 
-		
-
-			Response ret = repositoryImporter.doPostImport("/" +SOLUTION, input, "true", "true", "true", "true", "UTF-8",
-					logLevel, fileInfo, null);
+			Response ret = repositoryImporter.doPostImport("/" + SOLUTION, input, "true", "true", "true", "true",
+					"UTF-8", logLevel, fileInfo, null);
 
 			if (ret.getStatus() == 403) {
 				throw new UnifiedRepositoryAccessDeniedException("FORBIDDEN");
@@ -338,7 +331,7 @@ public class Repository {
 			if (Repository.DEBUG) {
 				System.out.println("\n-----> name file: " + ZIP_FILE_NAME + "\n");
 				System.out.println("\n----->  Exported solutionPath FS: " + solutionPath + "\n");
-				
+
 			}
 		}
 
@@ -365,7 +358,7 @@ public class Repository {
 		return excludeList;
 	}
 
-	public static RepositoryFileDto getJcrPathProperties(String location) throws FileNotFoundException,IOException {
+	public static RepositoryFileDto getJcrPathProperties(String location) throws FileNotFoundException, IOException {
 		location = location.replaceAll("/+", ":").replaceAll("\\\\+", ":") + ":";
 		location = location.replaceAll(":+", ":");
 
@@ -437,32 +430,20 @@ public class Repository {
 
 		} catch (Throwable e) {
 			if ((e instanceof FileNotFoundException)) {
-				throw new FileNotFoundException("JCR path '" + SOLUTION+ "' not found.");
+				throw new FileNotFoundException("JCR path '" + SOLUTION + "' not found.");
 			}
 		}
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		String filename = "";
 
-		if (wrapper == null) {
-			// throw new Exception("Sem dados para syncronizacao");
-		}
-
 		wrapper.getOutputStream().write(out);
 		filename = wrapper.getEncodedFileName();
-
 		// write file zip in temp file
 		FileSystem.writeToFile(out, filename);
-
 		String zipFile = Repository.TEMP_DIR + "/" + filename;
-
 		ZIP_FILE_NAME = filename;
-		// SOLUTION = location;
-		// if (Repository.SYNC.equals("fs")) {
-		ZipUtil.unpack(new File(zipFile), new File(TEMP_DIR ));
-		System.out.println("\n-----> file unpack: " + TEMP_DIR + "\n");
-		// }
-
+		ZipUtil.unpack(new File(zipFile), new File(TEMP_DIR));
 		if (Repository.DEBUG) {
 			System.out.println("\n-----> zipFile from JCR: " + zipFile + "\n");
 			System.out.println("\n-----> unpack file: " + TEMP_DIR + "\n");
@@ -482,8 +463,8 @@ public class Repository {
 			// Date jcrTimestamp = (Date) repoList.get(base + fsFile);
 			String _file = (solutionPath + "/" + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/").replaceAll("/+",
 					"/");
-			String _jcrFilePath = (TEMP_DIR+ fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/")
-					.replaceAll("/+", "/");
+			String _jcrFilePath = (TEMP_DIR + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/").replaceAll("/+",
+					"/");
 
 			File file = new File(_file);
 			if ((!file.isDirectory())) {
@@ -495,11 +476,10 @@ public class Repository {
 						if (Repository.SYNC.equals("fs")) {
 							if (jcrTimestamp.after(new Date(file.lastModified()))) {
 								if (Repository.DEBUG) {
-									System.out.println("\n-----> sync to : " + Repository.SYNC);
 									System.out.println("\n-----> jcrTimestamp: " + jcrTimestamp);
 									System.out.println("\n-----> fsTimestamp: " + fsTimestamp);
 									System.out.println("\n-----> fsfile: " + _file);
-									System.out.println("\n-----> jcrFilePath: " + _jcrFilePath);
+									System.out.println("\n-----> jcrFile: " + _jcrFilePath);
 									System.out.println(
 											"\n-----> file to be updated: " + fsFile.replaceAll(":", "/") + "\n");
 								}
@@ -512,11 +492,10 @@ public class Repository {
 							if (fsTimestamp.after(jcrTimestamp)) {
 
 								if (Repository.DEBUG) {
-									System.out.println("\n-----> sync to : " + Repository.SYNC);
 									System.out.println("\n-----> jcrTimestamp: " + jcrTimestamp);
 									System.out.println("\n-----> fsTimestamp: " + new Date(file.lastModified()));
 									System.out.println("\n-----> fsfile: " + _file);
-									System.out.println("\n-----> jcrFilePath: " + _jcrFilePath);
+									System.out.println("\n-----> jcrFile: " + _jcrFilePath);
 									System.out.println(
 											"\n-----> file to be updated: " + fsFile.replaceAll(":", "/") + "\n");
 								}
@@ -552,7 +531,7 @@ public class Repository {
 	public static void newZipForUpdate() {
 
 		String solution = FileSystem.splitFileName(ZIP_FILE_NAME)[0];
-		System.out.println("\n-----> zip for update: " + TEMP_DIR + "/" + ZIP_FILE_NAME );
+		System.out.println("\n-----> zip for update: " + TEMP_DIR + "/" + ZIP_FILE_NAME);
 
 		ZipUtil.pack(new File(TEMP_DIR + "/" + solution), new File(TEMP_DIR + "/" + ZIP_FILE_NAME), new NameMapper() {
 
