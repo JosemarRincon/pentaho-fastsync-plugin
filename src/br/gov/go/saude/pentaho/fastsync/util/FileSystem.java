@@ -300,8 +300,10 @@ public class FileSystem {
 			len = isf2.read(f2_buf);
 			for (int j = 0; j < len; j++) {
 				if (f1_buf[j] != f2_buf[j]) { // tamanho diferente e conteudo diferente
-					System.out.println("\n-----> inputStrem 1: " + f1_buf[j]);
-					System.out.println("\n-----> inputStrem 2: " + f2_buf[j]);
+					if (Repository.DEBUG) {
+						System.out.println("\n-----> inputStrem 1: " + f1_buf[j]);
+						System.out.println("\n-----> inputStrem 2: " + f2_buf[j]);
+					}
 					return true;
 				}
 			}
@@ -323,17 +325,18 @@ public class FileSystem {
 				if (!fileSystem.contains(line)) {
 					if (line.contains("<directory>") || line.contains("<directory />")
 							|| line.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-							|| line.contains("<modified_date>") 
-							|| line.contains("partitionschema") || line.contains("dynamic")
-							|| line.contains("partitions_per_slave") || line.contains("slaveserver")
-							|| line.contains("master") || line.contains("hostname") || line.contains("port")
-							|| line.contains("key_for_session_key")) {
+							|| line.contains("<modified_date>") || line.contains("partitionschema")
+							|| line.contains("dynamic") || line.contains("partitions_per_slave")
+							|| line.contains("slaveserver") || line.contains("master") || line.contains("hostname")
+							|| line.contains("port") || line.contains("key_for_session_key")) {
 						filesDiff = false;
 						continue;
 					}
-					System.out.println("\n-----> conteudo line: " + line.trim());
-					System.out.println("\n-----> conteudo : " + fileSystem);
-					System.out.println("\n-----> index : " + i);
+					if (Repository.DEBUG) {
+						System.out.println("\n-----> conteudo line: " + line.trim());
+						System.out.println("\n-----> conteudo : " + fileSystem);
+						System.out.println("\n-----> index : " + i);
+					}
 					filesDiff = true;
 					break;
 				}
@@ -348,7 +351,7 @@ public class FileSystem {
 		boolean filesDiff = false;
 		filesDiff = compareEspecificFiles(f1, f2);
 		if (!filesDiff) {
-			filesDiff=compareEspecificFiles(f2, f1);
+			filesDiff = compareEspecificFiles(f2, f1);
 		}
 
 		return filesDiff;

@@ -171,7 +171,6 @@ public class FastSyncREST {
 		return output;
 	}
 
-
 	@GET
 	@Path("/sync/{id}")
 	@Produces({ "application/json" })
@@ -265,7 +264,8 @@ public class FastSyncREST {
 			if ("jcr".equalsIgnoreCase(Repository.SYNC)) {
 				Repository.syncJcr(solution, path, delete, deletePerm, output, keepNewerFlag, userAgent, withManifest);
 			} else if ("fs".equalsIgnoreCase(Repository.SYNC)) {
-				Repository.syncFs(solution, path, delete, output, Repository.TEMP_DIR, userAgent, withManifest, keepNewerFlag);
+				Repository.syncFs(solution, path, delete, output, Repository.TEMP_DIR, userAgent, withManifest,
+						keepNewerFlag);
 			} else {
 				output.setError(Boolean.valueOf(true));
 				output.setError_message("FastSync: Invalid URL.");
@@ -313,9 +313,11 @@ public class FastSyncREST {
 		} finally {
 			try {
 
-				// FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
-				System.out.println("\n-----> Delete dir : " + Repository.TEMP_DIR + "\n");
+				 FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
 
+				if (Repository.DEBUG) {
+					System.out.println("\n-----> Delete dir : " + Repository.TEMP_DIR + "\n");
+				}
 				if (ret != null) {
 					PentahoLogoutHandler pentahoLogoutHandler = new PentahoLogoutHandler();
 					pentahoLogoutHandler.logout(request, response, null);

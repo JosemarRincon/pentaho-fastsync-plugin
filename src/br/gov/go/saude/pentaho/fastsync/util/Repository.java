@@ -245,11 +245,9 @@ public class Repository {
 
 			RepositoryImportResource repositoryImporter = new RepositoryImportResource();
 			if (Repository.DEBUG) {
-
 				System.out.println("\n----->  zipFile for import: " + zipFile + "\n");
 				System.out.println("\n----->  solution: " + SOLUTION + "\n");
 				System.out.println("\n----->  logLevel: " + logLevel + "\n");
-
 			}
 
 			Response ret = repositoryImporter.doPostImport("/" + SOLUTION, input, "true", "true", "true", "true",
@@ -590,7 +588,6 @@ public class Repository {
 		Collection<String> repoFiles = new ArrayList<String>();
 
 		for (String item : _repoFiles) {
-
 			repoFiles.add(StringUtils.removeStart(item, base));
 		}
 
@@ -602,60 +599,71 @@ public class Repository {
 
 		Collection<String> excludeList = Repository.excludeByRegex(localFiles,
 				PluginConfig.props.getProperty("import.exclude.list"));
-		for (String item : excludeList) {
-			returnList.getExclude().add(item);
-		}
+		try {
+			for (String item : excludeList) {
+				returnList.getExclude().add(item);
+			}
 
-		Collection<String> deleteList = Repository.getDiff(_deleteList, excludeList);
-		for (String item : deleteList) {
-			returnList.getDelete().add(item);
-		}
+			Collection<String> deleteList = Repository.getDiff(_deleteList, excludeList);
+			for (String item : deleteList) {
+				returnList.getDelete().add(item);
+			}
 
-		Collection<String> createList = Repository.getDiff(repoFiles, localFiles);
-		for (String item : createList) {
-			returnList.getCreate().add(item);
-		}
+			Collection<String> createList = Repository.getDiff(repoFiles, localFiles);
+			for (String item : createList) {
+				returnList.getCreate().add(item);
+			}
 
-		if (Repository.DEBUG) {
-			System.out.println("\n-----> base: " + base + "\n");
-			System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
-			System.out.println("\n-----> userAgent: " + userAgent + "\n");
-		}
-		Collection<String> updateList = null;
-		if (Repository.isJcrPathExists(Repository.SOLUTION)) {
-			Repository.getFilesFromJcr(userAgent, withManifest);
-			Collection<String> listFiltered = Repository
-					.getDiff(Repository.getDiff(Repository.getDiff(repoFiles, excludeList), createList), deleteList);
-			updateList = Repository.addFilesModifidied(listFiltered,
-					PentahoSystem.getApplicationContext().getSolutionPath(""), repoMaps.getModifiedDateList(), base);
+			if (Repository.DEBUG) {
+				System.out.println("\n-----> base: " + base + "\n");
+				System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
+				System.out.println("\n-----> userAgent: " + userAgent + "\n");
+			}
+			Collection<String> updateList = null;
+			if (Repository.isJcrPathExists(Repository.SOLUTION)) {
+				Repository.getFilesFromJcr(userAgent, withManifest);
+				Collection<String> listFiltered = Repository.getDiff(
+						Repository.getDiff(Repository.getDiff(repoFiles, excludeList), createList), deleteList);
+				updateList = Repository.addFilesModifidied(listFiltered,
+						PentahoSystem.getApplicationContext().getSolutionPath(""), repoMaps.getModifiedDateList(),
+						base);
 
-			if (keepNewerFlag) {
-				Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
-						updateList);
-				for (String item : preserveList) {
-					if (Repository.isJcrPathExists(item)) {
-						if (!Repository.getJcrPathProperties(base + item).isFolder()) {
-							returnList.getPreserve().add(item);
-							Repository.removeFilePreservedList(item);
+				if (keepNewerFlag) {
+					Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
+							updateList);
+					for (String item : preserveList) {
+						if (Repository.isJcrPathExists(item)) {
+							if (!Repository.getJcrPathProperties(base + item).isFolder()) {
+								returnList.getPreserve().add(item);
+								Repository.removeFilePreservedList(item);
+							}
 						}
 					}
+					Repository.newZipForUpdate();
+
+				} else {
+					updateList = Repository.getDiff(localFiles, excludeList);
 				}
-				Repository.newZipForUpdate();
-
-			} else {
-				updateList = Repository.getDiff(localFiles, excludeList);
 			}
-		}
 
-		if (Repository.DEBUG) {
-			System.out.println("\n-----> updateList: " + updateList + "\n");
-			System.out.println("\n-----> updateList size: " + updateList.size() + "\n");
-		}
-
-		for (String item : updateList) {
-			if (!Repository.getJcrPathProperties(base + item).isFolder()) {
-				returnList.getUpdate().add(item);
+			if (Repository.DEBUG) {
+				System.out.println("\n-----> updateList: " + updateList + "\n");
+				System.out.println("\n-----> updateList size: " + updateList.size() + "\n");
 			}
+
+			for (String item : updateList) {
+				if (!Repository.getJcrPathProperties(base + item).isFolder()) {
+					returnList.getUpdate().add(item);
+				}
+			}
+		} finally {
+			File folder = new File(Repository.TEMP_DIR);
+			if (folder.exists()) {
+				FileSystem.deleteFolder(folder);
+				System.out.println("\n-----> Delete list FS tmp : " + Repository.TEMP_DIR + "\n");
+
+			}
+
 		}
 
 	}
@@ -757,7 +765,7 @@ public class Repository {
 			File folder = new File(Repository.TEMP_DIR);
 			if (folder.exists()) {
 				FileSystem.deleteFolder(folder);
-				System.out.println("\n-----> Delete list tmp : " + Repository.TEMP_DIR + "\n");
+				System.out.println("\n-----> Delete list JCR tmp : " + Repository.TEMP_DIR + "\n");
 
 			}
 
