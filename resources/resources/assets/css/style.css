@@ -19,6 +19,4 @@
 hr {
 	border-color: #999;
 }
-.bootstrap-switch .bootstrap-switch-handle-off, .bootstrap-switch .bootstrap-switch-handle-on, .bootstrap-switch .bootstrap-switch-label {
-	padding: 8px !important;
-}
+

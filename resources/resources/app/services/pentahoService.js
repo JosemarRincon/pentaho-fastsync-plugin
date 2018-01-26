@@ -1,27 +1,20 @@
 angular.module('app').factory(
-		'pentahoService',
-		function($http) {
-
-			// create a new object
-			var pentahoFactory = {};
-
-			// get pentaho resources
-			pentahoFactory.getList = function(api, solution, path, keepFlag,
-					debug) {
-				return $http.get("/pentaho/plugin/fastsync/api/sync/list/"
-						+ api + "?solution=" + solution + "&path=" + path
-						+ "&keepNewerFlag=" + keepFlag + "&debug=" + debug);
-			};
-
-			pentahoFactory.sync = function(api, solution, path, del, delPerm,
-					debug, keepFlag) {
-				return $http.get("/pentaho/plugin/fastsync/api/sync/" + api
-						+ "?solution=" + solution + "&path=" + path
-						+ "&delete=" + del + "&deletePerm=" + delPerm
-						+ "&debug=" + debug + "&keepNewerFlag=" + keepFlag);
-			};
-
-			// return our entire pentahoFactory object
-			return pentahoFactory;
-
-		});
+	'pentahoService',
+	function ($http) {
+		// create a new object
+		var pentahoFactory = {};
+		// get pentaho resources
+		pentahoFactory.getList = function (scope) {
+			return $http.get("/pentaho/plugin/fastsync/api/sync/list/"
+				+ scope.api + "?solution=" + scope.solution + "&path=" + scope.path
+				+ "&keepNewerFlag=" + scope.checkboxModel.keep + "&debug=" + scope.debug + "&withManifest=" + scope.checkboxModel.manifest);
+		};
+		pentahoFactory.sync = function (scope) {
+			return $http.get("/pentaho/plugin/fastsync/api/sync/" + scope.api
+				+ "?solution=" + scope.solution + "&path=" + scope.path
+				+ "&delete=" + scope.checkboxModel.delete + "&deletePerm=" + scope.checkboxModel.deletePerm
+				+ "&debug=" + scope.debug + "&keepNewerFlag=" + scope.checkboxModel.keep + "&withManifest=" + scope.checkboxModel.manifest);
+		};
+		// return our entire pentahoFactory object
+		return pentahoFactory;
+	});
