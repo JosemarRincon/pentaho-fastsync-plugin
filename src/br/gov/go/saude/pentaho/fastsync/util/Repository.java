@@ -248,6 +248,7 @@ public class Repository {
 				System.out.println("\n----->  zipFile for import: " + zipFile + "\n");
 				System.out.println("\n----->  solution: " + SOLUTION + "\n");
 				System.out.println("\n----->  logLevel: " + logLevel + "\n");
+				System.out.println("\n----->  file separador: " + File.separator + "\n");
 			}
 
 			Response ret = repositoryImporter.doPostImport("/" + SOLUTION, input, "true", "true", "true", "true",
@@ -517,7 +518,7 @@ public class Repository {
 	}
 
 	public static void removeFilePreservedList(String item) {
-		//System.out.println("\n-----> remove preserved file : " + TEMP_DIR + item);
+		// System.out.println("\n-----> remove preserved file : " + TEMP_DIR + item);
 		File file = new File(TEMP_DIR + item);
 
 		if ((file.isFile()) || ((file.isDirectory()) && (file.list().length == 0))) {
@@ -764,7 +765,7 @@ public class Repository {
 		} finally {
 			File folder = new File(Repository.TEMP_DIR);
 			if (folder.exists()) {
-				FileSystem.deleteFolder(folder);
+				 FileSystem.deleteFolder(folder);
 				System.out.println("\n-----> Delete list JCR tmp : " + Repository.TEMP_DIR + "\n");
 
 			}
@@ -806,13 +807,13 @@ public class Repository {
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
 				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
 
-		if ("True".equalsIgnoreCase(delete)) {
+		if ("true".equalsIgnoreCase(delete)) {
 			String location = (path + "/" + solution).replaceAll("/+", "/");
 
 			String deleteList = Repository.getDeleteList(path, location, solutionFullPath);
 
 			if (deleteList.length() > 0) {
-				Repository.deleteItems(deleteList, "True".equalsIgnoreCase(deletePerm));
+				Repository.deleteItems(deleteList, "true".equalsIgnoreCase(deletePerm));
 			}
 		}
 
@@ -833,17 +834,19 @@ public class Repository {
 			String listaExcludCopy = listFiles.getPreserve().isEmpty() ? ""
 					: listFiles.getPreserve().toString().replaceAll("\\[", "").replaceAll("\\]", "")
 							.replaceAll("\\/" + Repository.SOLUTION, ".*\\\\\\+").replaceAll("\\+", "\\\\");
-
-			System.out.println("\n----->  listaExcludCopy: " + listaExcludCopy + "\n");
+			if (Repository.DEBUG) {
+				System.out.println("\n----->  listaExcludCopy: " + listaExcludCopy + "\n");
+			}
 			FileSystem.copyDirectory(new File(solutionFullPath), dstDir,
 					PluginConfig.props.getProperty("import.exclude.list"));
 		}
 		String dstTarget = Repository.TEMP_DIR + File.separator + Repository.SOLUTION + File.separator;
 		for (String item : listFiles.getPreserve()) {
 			File file = new File(dstTarget + item);
-			/* 	if ((file.isFile()) || (FileSystem.isDirectoryEmpty(file))) {
-					FileSystem.deleteFile(file);
-				} */
+			/*
+			 * if ((file.isFile()) || (FileSystem.isDirectoryEmpty(file))) {
+			 * FileSystem.deleteFile(file); }
+			 */
 			if ((file.isFile())) {
 				FileSystem.deleteFile(file);
 			}
@@ -857,35 +860,38 @@ public class Repository {
 				FileSystem.deleteFile(item);
 			}
 		}
+		try {
 
-		if (!FileSystem.isDirectoryEmpty(dstCopyFull)) {
-			Zip zipPack = new Zip();
-			String zipName = Repository.SOLUTION + ".zip";
-			String fullZipName = Repository.TEMP_DIR + File.separator + zipName;
-			zipPack.setFullPathZipFileName(fullZipName);
-			//zipPack.setPackDirectoryPath((dstTargetFull).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
-			zipPack.setPackDirectoryPath((dstTarget).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
-			zipPack.packDirectory();
+			if (!FileSystem.isDirectoryEmpty(dstCopyFull)) {
+				Zip zipPack = new Zip();
+				String zipName = Repository.SOLUTION + ".zip";
+				String fullZipName = Repository.TEMP_DIR + File.separator + zipName;
+				zipPack.setFullPathZipFileName(fullZipName.replaceAll("\\\\+", "/").replaceAll("/+", "/"));
+				// zipPack.setPackDirectoryPath((dstTargetFull).replaceAll("\\\\+",
+				// "/").replaceAll("/+", "/"));
+				zipPack.setPackDirectoryPath((dstTarget).replaceAll("\\\\+", "/").replaceAll("/+", "/"));
+				zipPack.packDirectory();
 
-			if (Repository.DEBUG) {
-				System.out.println("\n----->  tmpDir para JRC: "
-						+ (dstCopyFull).replaceAll("\\\\+", "/").replaceAll("/+", "/") + "\n");
-				System.out.println("\n----->  fullZipName para enviar pro JRC: " + fullZipName + "\n");
-				System.out.println("\n----->  solution: " + Repository.SOLUTION + "\n");
+				if (Repository.DEBUG) {
+					System.out.println("\n----->  tmpDir para JRC: "
+							+ (dstCopyFull).replaceAll("\\\\+", "/").replaceAll("/+", "/") + "\n");
+					System.out.println("\n----->  fullZipName para enviar pro JRC: "
+							+ fullZipName.replaceAll("\\\\+", "/").replaceAll("/+", "/") + "\n");
+					System.out.println("\n----->  solution: " + Repository.SOLUTION + "\n");
+				}
+				Repository.importFileToJcr(fullZipName.replaceAll("\\\\+", "/").replaceAll("/+", "/"), zipName);
 			}
-			Repository.importFileToJcr(fullZipName, zipName);
+
+			output.setError(Boolean.valueOf(false));
+			output.setMessage("Successful synchronize to JCR from FileSystem.");
+
+		} catch (Throwable e) {
+			output.setError(Boolean.valueOf(true));
+			output.setError_message(e.getMessage());
+			output.setMessage("FastSync: Internal Server Error");
+			e.printStackTrace();
+
 		}
-
-		output.setError(Boolean.valueOf(false));
-		output.setMessage("Successful synchronize to JCR from FileSystem.");
-
-		// } catch (Throwable e) {
-		// output.setError(Boolean.valueOf(true));
-		// output.setError_message(e.getMessage());
-		// output.setMessage("FastSync: Internal Server Error");
-		// e.printStackTrace();
-		//
-		// }
 	}
 
 }

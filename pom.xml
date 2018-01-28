@@ -16,8 +16,6 @@
 					<source>1.8</source>
 					<target>1.8</target>
 				</configuration>
-
-
 			</plugin>
 			<plugin>
 				<artifactId>maven-antrun-plugin</artifactId>
@@ -34,6 +32,9 @@
 									<fileset dir="target/">
 										<include name="**.jar" />
 									</fileset>
+									<fileset dir="lib">
+										<include name="zt-zip-1.8.jar" />
+									</fileset>
 								</copy>
 								<copy todir="${fastsync.dir}">
 									<fileset dir="resources">
@@ -45,8 +46,7 @@
 										<include name="**" />
 									</fileset>
 								</copy>
-								<delete dir="${fastsync.dir}../" verbose="true" />
-
+								<delete dir="${fastsync.dir}../" verbose="false" />
 							</tasks>
 						</configuration>
 						<goals>

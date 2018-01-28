@@ -187,13 +187,13 @@ public class FastSyncREST {
 
 		Map<String, Object> ret = null;
 
-		boolean keepNewerFlag = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("keepNewerFlag"));
+		boolean keepNewerFlag = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("keep"));
 
 		try {
 			Repository.SYNC = id;
 			String delete = (String) info.getQueryParameters().getFirst("delete");
 			String deletePerm = (String) info.getQueryParameters().getFirst("deletePerm");
-			Repository.DEBUG = "True".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
+			Repository.DEBUG = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
 
 			String _withManifest = (String) info.getQueryParameters().getFirst("withManifest");
 			withManifest = "true".equalsIgnoreCase(_withManifest) ? "true" : "false";
@@ -347,7 +347,7 @@ public class FastSyncREST {
 		;
 		String tmpDir = FileSystem.getTmpDir(solution).replaceAll("\\\\+", "/").replaceAll("/+", "/");
 
-		Repository.DEBUG = "True".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
+		Repository.DEBUG = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
 
 		System.out.println("\n-----> debug: " + Repository.DEBUG + "\n");
 
@@ -378,7 +378,7 @@ public class FastSyncREST {
 		StringUtils.startsWith(path, "/");
 		StringUtils.removeEnd(path, "/");
 
-		boolean keepNewerFlag = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("keepNewerFlag"));
+		boolean keepNewerFlag = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("keep"));
 
 		Repository.TEMP_DIR = FileSystem.getTmpDir(solution);
 		Repository.SOLUTION = File.separator + solution;
