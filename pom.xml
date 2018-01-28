@@ -1,0 +1,227 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>pentaho-fastsync-plugin</groupId>
+	<artifactId>pentaho-fastsync-plugin</artifactId>
+	<version>0.2.1</version>
+	<build>
+		<defaultGoal>install</defaultGoal>
+		<sourceDirectory>src</sourceDirectory>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.7.0</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+
+
+			</plugin>
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<configuration>
+							<tasks>
+								<!-- Place any ant task here. You can add anything you can add between 
+									<target> and </target> in a build.xml. -->
+								<mkdir dir="${fastsync.dir}/lib" />
+								<copy todir="${fastsync.dir}/lib">
+									<fileset dir="target/">
+										<include name="**.jar" />
+									</fileset>
+								</copy>
+								<copy todir="${fastsync.dir}">
+									<fileset dir="resources">
+										<include name="**" />
+									</fileset>
+								</copy>
+								<copy todir="${deploy.dir}">
+									<fileset dir="${fastsync.dir}../">
+										<include name="**" />
+									</fileset>
+								</copy>
+								<delete dir="${fastsync.dir}../" verbose="true" />
+
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+		</plugins>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.apache.maven.plugins
+										</groupId>
+										<artifactId>
+											maven-antrun-plugin
+										</artifactId>
+										<versionRange>
+											[1.7,)
+										</versionRange>
+										<goals>
+											<goal>run</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<fastsync.dir>target/release/fastsync/</fastsync.dir>
+		<deploy.dir>C:\developer\pentaho\8\pentaho-server\pentaho-solutions\system\</deploy.dir>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>pentaho-bi-platform</groupId>
+			<artifactId>data-access</artifactId>
+			<version>8.0.0.0-28</version>
+			<scope>system</scope>
+			<systemPath>${project.build.directory}/../lib/pentaho-bi-platform-data-access-8.0.0.0-28.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>pentaho-platform</groupId>
+			<artifactId>api</artifactId>
+			<version>8.0.0.0-28</version>
+			<scope>system</scope>
+			<systemPath>${project.build.directory}/../lib/pentaho-platform-api-8.0.0.0-28.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>pentaho-platform</groupId>
+			<artifactId>core</artifactId>
+			<version>8.0.0.0-28</version>
+			<scope>system</scope>
+			<systemPath>${project.build.directory}/../lib/pentaho-platform-core-8.0.0.0-28.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>pentaho-platform</groupId>
+			<artifactId>extensions</artifactId>
+			<version>8.0.0.0-28</version>
+			<scope>system</scope>
+			<systemPath>${project.build.directory}/../lib/pentaho-platform-extensions-8.0.0.0-28.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>pentaho-platform</groupId>
+			<artifactId>repository</artifactId>
+			<version>8.0.0.0-28</version>
+			<scope>system</scope>
+			<systemPath>${project.build.directory}/../lib/pentaho-platform-repository-8.0.0.0-28.jar</systemPath>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.zeroturnaround/zt-zip -->
+		<dependency>
+			<groupId>org.zeroturnaround</groupId>
+			<artifactId>zt-zip</artifactId>
+			<version>1.8</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.2</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.sun.jersey/jersey-core -->
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-core</artifactId>
+			<version>1.19.1</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.10.0</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.springframework/spring-tx -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-tx</artifactId>
+			<version>4.3.2.RELEASE</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/javax.ws.rs/jsr311-api -->
+		<dependency>
+			<groupId>javax.ws.rs</groupId>
+			<artifactId>jsr311-api</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-core</artifactId>
+			<version>4.1.3.RELEASE</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-web -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-web</artifactId>
+			<version>4.1.3.RELEASE</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.springframework/spring-core -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>4.3.2.RELEASE</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>4.0.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.2</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.springframework/spring-beans -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
+			<version>4.3.2.RELEASE</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.0</version>
+		</dependency>
+
+
+
+
+
+
+	</dependencies>
+</project>

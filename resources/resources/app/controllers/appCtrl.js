@@ -24,8 +24,6 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	});
 
 
-	
-
 	$scope.path = "/";
 	$scope.debug = false;
 	$scope.solution = "";

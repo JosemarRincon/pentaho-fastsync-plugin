@@ -15,14 +15,15 @@ public class Login {
 	public static Map<String, Object> doLogin(HttpServletRequest request, HttpServletResponse response, UriInfo info,
 			String myType, String myToken, String myUrlEncoded) throws PluginBeanException, NoSuchMethodException,
 			SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		IPluginManager plugMan = (IPluginManager) PentahoSystem.get(IPluginManager.class,
+		IPluginManager plugMan = PentahoSystem.get(IPluginManager.class,
 				PentahoSessionHolder.getSession());
 
 		Object authBean = plugMan.getBean("integrator.auth");
 		Method authenticate = authBean.getClass().getMethod("authenticate", new Class[] { HttpServletRequest.class,
 				HttpServletResponse.class, UriInfo.class, String.class, String.class, String.class });
 
-		Map<String, Object> ret = (Map) authenticate.invoke(authBean,
+		@SuppressWarnings("unchecked")
+		Map<String, Object> ret = (Map<String, Object>) authenticate.invoke(authBean,
 				new Object[] { request, response, info, myType, myToken, myUrlEncoded });
 
 		return ret;

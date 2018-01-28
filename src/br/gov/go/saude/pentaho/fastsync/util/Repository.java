@@ -24,7 +24,7 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.pentaho.platform.api.engine.PentahoAccessControlException;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.repository2.unified.webservices.RepositoryFileDto;
