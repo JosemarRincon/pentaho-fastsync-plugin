@@ -460,11 +460,12 @@ public class Repository {
 		while (i.hasNext()) {
 			String fsFile = (String) i.next();
 			// Date jcrTimestamp = (Date) repoList.get(base + fsFile);
-			System.out.println("\n-----> fsFile: " + fsFile);
+			/* System.out.println("\n-----> fsFile: " + fsFile); */
 			
-			String _file = (solutionPath + "/" + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/").replaceAll("\\+","/");
-			String _jcrFilePath = (TEMP_DIR + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/").replaceAll("/+",
-					"/");
+			String _file = (solutionPath + "/" + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/");
+			String _jcrFilePath = (TEMP_DIR + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/");
+		/* 	System.out.println("\n-----> _jcrFilePath: " + _jcrFilePath); 
+			System.out.println("\n-----> _file: " + _file);  */
 
 			File file = new File(_file);
 			if ((!file.isDirectory())) {
@@ -624,6 +625,7 @@ public class Repository {
 				System.out.println("\n-----> userAgent: " + userAgent + "\n");
 				// System.out.println("\n-----> repoFiles: " + repoFiles + "\n\n");
 				// System.out.println("\n-----> localFiles: " + localFiles + "\n");
+				
 			}
 			Collection<String> updateList = new ArrayList<String>();
 			System.out.println("\n-----> Repository.SOLUTION: " + Repository.SOLUTION + "\n");
@@ -642,10 +644,9 @@ public class Repository {
 				// if (keepNewerFlag) {
 				Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
 						updateList);
-				System.out.println("\n-----> preserveList: " + preserveList + "\n\n");
+				
 				for (String item : preserveList) {
 					if (Repository.isJcrPathExists(item)) {
-						System.out.println("\n-----> item: " + item + "\n\n");
 						if (!Repository.getJcrPathProperties(base + item).isFolder()) {
 							returnList.getPreserve().add(item);
 							Repository.removeFilePreservedList(item);
@@ -662,6 +663,7 @@ public class Repository {
 			if (Repository.DEBUG) {
 				System.out.println("\n-----> updateList: " + updateList + "\n");
 				System.out.println("\n-----> updateList size: " + updateList.size() + "\n");
+				
 			}
 
 			for (String item : updateList) {
@@ -670,12 +672,12 @@ public class Repository {
 				}
 			}
 		} finally {
-			File folder = new File(Repository.TEMP_DIR);
+		/* 	File folder = new File(Repository.TEMP_DIR);
 			if (folder.exists()) {
 				FileSystem.deleteFolder(folder);
 				System.out.println("\n-----> Delete list FS tmp : " + Repository.TEMP_DIR + "\n");
 
-			}
+			} */
 
 		}
 

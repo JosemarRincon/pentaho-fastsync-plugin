@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>pentaho-fastsync-plugin</groupId>
+	<groupId>br.gov.go.saude</groupId>
 	<artifactId>pentaho-fastsync-plugin</artifactId>
 	<version>0.2.1</version>
 	<build>
@@ -24,11 +24,15 @@
 					<execution>
 						<phase>generate-sources</phase>
 						<configuration>
-							<tasks>
+							<target>
 								<!-- Place any ant task here. You can add anything you can add between 
 									<target> and </target> in a build.xml. -->
-								
+								<!-- apply patches -->
+								<echo>deleta o release gerada do target e do diretorio de deploy</echo>
+								<delete dir="${fastsync.dir}../" verbose="false" />
+								<delete dir="${deploy.dir}/fastsync" verbose="false" />
 								<mkdir dir="${fastsync.dir}/lib" />
+								<echo>copia libs</echo>
 								<copy todir="${fastsync.dir}/lib">
 									<fileset dir="target/">
 										<include name="**.jar" />
@@ -37,25 +41,54 @@
 										<include name="zt-zip-1.8.jar" />
 									</fileset>
 								</copy>
-								<copy todir="${fastsync.dir}">
+								<echo>copia os resources para o build</echo>
+								<copy todir="${fastsync.dir}/">
 									<fileset dir="resources">
 										<include name="**" />
 									</fileset>
 								</copy>
+
+								<mkdir dir="${fastsync.dir}/webapp" />
+								<echo>copia arquivos web</echo>
+								<copy todir="${fastsync.dir}/webapp">
+									<fileset dir="webapp/">
+										<include name="**" />
+									</fileset>
+								</copy>
+								<echo>copia a release gerada para o diretorio de deploy</echo>
 								<copy todir="${deploy.dir}">
 									<fileset dir="${fastsync.dir}../">
 										<include name="**" />
 									</fileset>
 								</copy>
-								<delete dir="${fastsync.dir}../" verbose="false" />
-								<delete file="target/pentaho-fastsync-plugin-0.2.1.jar" verbose="false" />
-								
-							</tasks>
+
+								<delete file="target/pentaho-fastsync-plugin-0.2.1.jar"
+									verbose="false" />
+
+							</target>
 						</configuration>
 						<goals>
 							<goal>run</goal>
 						</goals>
 					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>exec-maven-plugin</artifactId>
+				<groupId>org.codehaus.mojo</groupId>
+				<version>1.6.0</version>
+				<executions>
+					<execution>
+						<id>stop-pentaho</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>${app.dir}stop-pentaho.sh</executable>
+						</configuration>
+					</execution>
+
 				</executions>
 			</plugin>
 
@@ -90,6 +123,25 @@
 										<ignore></ignore>
 									</action>
 								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.codehaus.mojo
+										</groupId>
+										<artifactId>
+											exec-maven-plugin
+										</artifactId>
+										<versionRange>
+											[1.6.0,)
+										</versionRange>
+										<goals>
+											<goal>exec</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
 							</pluginExecutions>
 						</lifecycleMappingMetadata>
 					</configuration>
@@ -100,10 +152,19 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<fastsync.dir>target/release/fastsync/</fastsync.dir>
-		<deploy.dir>C:\developer\pentaho\8\pentaho-server\pentaho-solutions\system\</deploy.dir>
+		<deploy.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/pentaho-solutions/system/</deploy.dir>
+		<app.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/</app.dir>
 	</properties>
 
 	<dependencies>
+		<!-- https://mvnrepository.com/artifact/junit/junit -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>pentaho-bi-platform</groupId>
 			<artifactId>data-access</artifactId>
