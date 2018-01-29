@@ -6,7 +6,12 @@
 	<version>0.2.1</version>
 	<build>
 		<defaultGoal>install</defaultGoal>
-		<sourceDirectory>src</sourceDirectory>
+		<sourceDirectory>
+      		${project.basedir}/src/java/main
+    	</sourceDirectory>
+		<testSourceDirectory>
+      		${project.basedir}/src/java/test
+    	</testSourceDirectory>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
