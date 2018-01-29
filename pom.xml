@@ -27,6 +27,7 @@
 							<tasks>
 								<!-- Place any ant task here. You can add anything you can add between 
 									<target> and </target> in a build.xml. -->
+								
 								<mkdir dir="${fastsync.dir}/lib" />
 								<copy todir="${fastsync.dir}/lib">
 									<fileset dir="target/">
@@ -47,6 +48,8 @@
 									</fileset>
 								</copy>
 								<delete dir="${fastsync.dir}../" verbose="false" />
+								<delete file="target/pentaho-fastsync-plugin-0.2.1.jar" verbose="false" />
+								
 							</tasks>
 						</configuration>
 						<goals>
