@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.pentaho.platform.web.http.api.resources.services.FileService.RepositoryFileToStreamWrapper;
 
 public class FileSystem {
 	public static boolean renameFile(String oldName, String newName) {
@@ -219,8 +220,12 @@ public class FileSystem {
 			fop.write(contentInBytes);
 			fop.flush();
 			fop.close();
-			System.out.println("\n file write : \n" + Repository.TEMP_DIR + File.separator + fileName);
-			System.out.println("\n *****Done****** \n ");
+			if (Repository.DEBUG) {
+				System.out.println("\n file write : \n" + Repository.TEMP_DIR + File.separator + fileName);
+				System.out.println("\n ***** Download from JCR is complete ****** \n ");
+
+			}
+			
 		} finally {
 			if (fop != null) {
 				fop.close();
@@ -267,7 +272,7 @@ public class FileSystem {
 			return isFilesDiffs(file2, file1);
 		}
 
-		//return isFilesDiffs(file1, file2);
+		// return isFilesDiffs(file1, file2);
 
 	}
 

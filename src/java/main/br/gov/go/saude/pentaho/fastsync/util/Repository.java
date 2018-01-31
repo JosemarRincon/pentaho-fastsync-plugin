@@ -461,11 +461,13 @@ public class Repository {
 			String fsFile = (String) i.next();
 			// Date jcrTimestamp = (Date) repoList.get(base + fsFile);
 			/* System.out.println("\n-----> fsFile: " + fsFile); */
-			
+
 			String _file = (solutionPath + "/" + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/");
 			String _jcrFilePath = (TEMP_DIR + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/");
-		/* 	System.out.println("\n-----> _jcrFilePath: " + _jcrFilePath); 
-			System.out.println("\n-----> _file: " + _file);  */
+			/*
+			 * System.out.println("\n-----> _jcrFilePath: " + _jcrFilePath);
+			 * System.out.println("\n-----> _file: " + _file);
+			 */
 
 			File file = new File(_file);
 			if ((!file.isDirectory())) {
@@ -617,15 +619,14 @@ public class Repository {
 				returnList.getCreate().add(item);
 			}
 
-			System.out.println("\n-----> keepNewerFlag:" + keepNewerFlag + " \n\n");
-
 			if (Repository.DEBUG) {
 				System.out.println("\n-----> base: " + base + "\n");
 				System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
 				System.out.println("\n-----> userAgent: " + userAgent + "\n");
+				System.out.println("\n-----> keepNewerFlag:" + keepNewerFlag + " \n\n");
 				// System.out.println("\n-----> repoFiles: " + repoFiles + "\n\n");
 				// System.out.println("\n-----> localFiles: " + localFiles + "\n");
-				
+
 			}
 			Collection<String> updateList = new ArrayList<String>();
 			System.out.println("\n-----> Repository.SOLUTION: " + Repository.SOLUTION + "\n");
@@ -644,7 +645,7 @@ public class Repository {
 				// if (keepNewerFlag) {
 				Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
 						updateList);
-				
+
 				for (String item : preserveList) {
 					if (Repository.isJcrPathExists(item)) {
 						if (!Repository.getJcrPathProperties(base + item).isFolder()) {
@@ -663,7 +664,7 @@ public class Repository {
 			if (Repository.DEBUG) {
 				System.out.println("\n-----> updateList: " + updateList + "\n");
 				System.out.println("\n-----> updateList size: " + updateList.size() + "\n");
-				
+
 			}
 
 			for (String item : updateList) {
@@ -672,12 +673,14 @@ public class Repository {
 				}
 			}
 		} finally {
-		/* 	File folder = new File(Repository.TEMP_DIR);
-			if (folder.exists()) {
-				FileSystem.deleteFolder(folder);
-				System.out.println("\n-----> Delete list FS tmp : " + Repository.TEMP_DIR + "\n");
-
-			} */
+			/*
+			 * File folder = new File(Repository.TEMP_DIR); if (folder.exists()) {
+			 * FileSystem.deleteFolder(folder);
+			 * System.out.println("\n-----> Delete list FS tmp : " + Repository.TEMP_DIR +
+			 * "\n");
+			 * 
+			 * }
+			 */
 
 		}
 
@@ -779,7 +782,9 @@ public class Repository {
 			File folder = new File(Repository.TEMP_DIR);
 			if (folder.exists()) {
 				FileSystem.deleteFolder(folder);
-				System.out.println("\n-----> Delete list JCR tmp : " + Repository.TEMP_DIR + "\n");
+				if (Repository.DEBUG) {
+					System.out.println("\n-----> Delete list JCR tmp : " + Repository.TEMP_DIR + "\n");
+				}
 
 			}
 
@@ -798,11 +803,16 @@ public class Repository {
 			}
 		}
 		ReturnFileList listFiles = new ReturnFileList();
+		boolean haveFileForSync = false;
 		try {
 			solutionPath = solutionPath + Repository.SOLUTION;
 			Repository.listFs(solution, path, listFiles, keepNewerFlag, tmpDir, withManifest, userAgent);
 		} finally {
-			Repository.exportFileToFs2(solutionPath, location, listFiles);
+			haveFileForSync = !listFiles.getUpdate().isEmpty() || !listFiles.getDelete().isEmpty()
+					|| !listFiles.getCreate().isEmpty() ? true : false;
+			if (haveFileForSync) {
+				Repository.exportFileToFs2(solutionPath, location, listFiles);
+			}
 			FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
 			if (Repository.DEBUG) {
 				System.out.println("\n-----> solutionPath FS: " + solutionPath + "\n");
@@ -810,9 +820,18 @@ public class Repository {
 			}
 
 		}
+		if (Repository.DEBUG) {
+			System.out.println("\n-----> haveFileForSync" + haveFileForSync + "\n");
+		}
+		if (haveFileForSync) {
+			output.setError(Boolean.valueOf(false));
+			output.setMessage("Successful synchronize to FileSystem from JCR.");
 
-		output.setError(Boolean.valueOf(false));
-		output.setMessage("Successful synchronize to FileSystem from JCR.");
+		} else {
+			output.setError(Boolean.valueOf(false));
+			output.setMessage("There is no file for synchronization.");
+		}
+
 	}
 
 	public static void syncJcr(String solution, String path, String delete, String deletePerm, Output output,
@@ -874,8 +893,12 @@ public class Repository {
 			}
 		}
 		try {
-
-			if (!FileSystem.isDirectoryEmpty(dstCopyFull)) {
+			boolean haveFileForSync = !listFiles.getUpdate().isEmpty() || !listFiles.getDelete().isEmpty()
+					|| !listFiles.getCreate().isEmpty() ? true : false;
+			if (Repository.DEBUG) {
+				System.out.println("\n-----> haveFileForSync" + haveFileForSync + "\n");
+			}
+			if (!FileSystem.isDirectoryEmpty(dstCopyFull) && haveFileForSync) {
 				Zip zipPack = new Zip();
 				String zipName = Repository.SOLUTION + ".zip";
 				String fullZipName = Repository.TEMP_DIR + File.separator + zipName;
@@ -893,10 +916,12 @@ public class Repository {
 					System.out.println("\n----->  solution: " + Repository.SOLUTION + "\n");
 				}
 				Repository.importFileToJcr(fullZipName.replaceAll("\\\\+", "/").replaceAll("/+", "/"), zipName);
+				output.setError(Boolean.valueOf(false));
+				output.setMessage("Successful synchronize to JCR from FileSystem.");
+			} else {
+				output.setError(Boolean.valueOf(false));
+				output.setMessage("There is no file for synchronization.");
 			}
-
-			output.setError(Boolean.valueOf(false));
-			output.setMessage("Successful synchronize to JCR from FileSystem.");
 
 		} catch (Throwable e) {
 			output.setError(Boolean.valueOf(true));

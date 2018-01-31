@@ -58,7 +58,8 @@ public class FastSyncREST {
 
 		String path = (String) info.getQueryParameters().getFirst("path");
 
-		String schema = (String) info.getQueryParameters().getFirst("schema");
+		String schema = (String) info.getQueryParameters().getFirst("schemaPath");
+		schema = schema+".xml";
 		if (StringUtils.isBlank(schema)) {
 			output.setError(Boolean.valueOf(true));
 			output.setError_message("FastSync: Missing parameter.");
@@ -135,7 +136,7 @@ public class FastSyncREST {
 					"Datasource=" + datasourceName, null);
 			dataInputStream.close();
 			output.setError(Boolean.valueOf(false));
-			output.setMessage(catalogName + " published successful.");
+			output.setMessage("Cube "+catalogName + " published successful.");
 		} catch (FileNotFoundException e) {
 
 			output.setError(Boolean.valueOf(true));

@@ -15,11 +15,16 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	$scope.hideSync = true;
 
 	$('#switch').on('switchChange.bootstrapSwitch', function(e, state) {
-/* 		console.log(e.target.checked);
-		console.log($scope.switchFlag);
-		console.log(state ); */
+/*
+ * console.log(e.target.checked); console.log($scope.switchFlag);
+ * console.log(state );
+ */
 		$scope.switchFlag = !$scope.switchFlag;
 		$scope.hideSync = true;
+		if(!$scope.switchFlag){
+			$scope.checkboxModel.publishCube = false;
+		}
+		
 		
 	});
 
@@ -27,17 +32,21 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	$scope.path = "/";
 	$scope.debug = false;
 	$scope.solution = "";
+	$scope.schemaPath = "";
+	$scope.datasourceName="";
+	$scope.xmlaEnabledFlag=true;
 	$scope.checkboxModel = {
 		manifest: false,
 		deletePerm: true,
 		keep: true,
 		delete: true,
+		publishCube: false,
 		debug: false
 	};
 
 	$scope.getListView = function (dataResultSync) {
 		$scope.loading = true;
-		$scope.hideSync = false;
+		
 		
 		$scope.api = "fs";
 		if ($scope.switchFlag) $scope.api = "jcr";
@@ -81,6 +90,15 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 				$scope.deleteSize = (data.delete == undefined) ? 0 : data.delete.length;
 				$scope.preserveSize = (data.preserve == undefined) ? 0 : data.preserve.length;
 				$scope.showFlag = true;
+				
+				if($scope.haveFile()){
+					$scope.hideSync = false;
+				}else{
+					setMessageAlert("There is no file change for synchronization.", "false");
+					$scope.loading = false;
+					$scope.hideSync = true;
+				}
+				
 			}
 			else {
 				$scope.showFlag = false;
@@ -95,14 +113,54 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 			}
 		});
 	};
+	
+	$scope.haveFile= function(){
+		return $scope.createSize > 0 || $scope.updateSize>0 || $scope.deleteSize>0 ? true :false;
+	}
 
 	$scope.sync = function () {
 		$scope.loading = true;
 		$scope.api = "fs";
 		if ($scope.switchFlag) $scope.api = "jcr";
-		pentahoService.sync($scope).success(function (data) {
+		
+		if($scope.haveFile()){
+			pentahoService.sync($scope).success(function (data) {
+				if (data.error == 'false') {
+					$scope.getListView(data);
+					if($scope.checkboxModel.publishCube){
+						$scope.publishCube();
+					}
+					
+				}
+				else {
+					setMessageAlert(data.message + ": " + data.error_message, "true");
+				}
+	
+			}).error(function (data, status) {
+				setMessageAlert("Aconteceu um problema: " + data, "true");
+	
+			}).finally(function () {
+				// $scope.loading = false;
+				
+			});
+		}else {
+			
+//			setMessageAlert("There is no file change for synchronization.", "false");
+			if($scope.checkboxModel.publishCube && $scope.api=="jcr" ){
+				$scope.publishCube();
+			}else{
+				$scope.loading = false;
+			}
+			
+		}
+	};
+	
+	$scope.publishCube = function(){
+		$scope.loading = true;
+		
+		pentahoService.publishCube($scope).success(function (data) {
 			if (data.error == 'false') {
-				$scope.getListView(data);
+				setMessageAlert(data.message, "false");
 			}
 			else {
 				setMessageAlert(data.message + ": " + data.error_message, "true");
@@ -112,9 +170,10 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 			setMessageAlert("Aconteceu um problema: " + data, "true");
 
 		}).finally(function () {
-			//$scope.loading = false;
+			$scope.loading = false;
+			
 		});
-	};
+	}
 
 	$scope.collapse = {};
 	$scope.collapse.cr = "collapse";

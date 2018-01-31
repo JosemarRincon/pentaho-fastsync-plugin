@@ -15,6 +15,12 @@ angular.module('app').factory(
 				+ "&delete=" + scope.checkboxModel.delete + "&deletePerm=" + scope.checkboxModel.deletePerm
 				+ "&debug=" + scope.checkboxModel.debug + "&keep=" + scope.checkboxModel.keep + "&withManifest=" + scope.checkboxModel.manifest);
 		};
+		pentahoFactory.publishCube = function (scope) {
+			return $http.get("/pentaho/plugin/fastsync/api/publish"
+				+ "?solution=" + scope.solution + "&path=" + scope.path 
+				+"&schemaPath="+ scope.schemaPath+ "&datasourceName="+ scope.datasourceName 
+				+"&xmlaEnabledFlag="+ scope.xmlaEnabledFlag);
+		};
 		// return our entire pentahoFactory object
 		return pentahoFactory;
 	});
