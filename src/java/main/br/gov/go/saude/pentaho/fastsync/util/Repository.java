@@ -624,13 +624,14 @@ public class Repository {
 				System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
 				System.out.println("\n-----> userAgent: " + userAgent + "\n");
 				System.out.println("\n-----> keepNewerFlag:" + keepNewerFlag + " \n\n");
+				System.out.println("\n-----> Repository.SOLUTION: " + Repository.SOLUTION + "\n");
+				System.out.println("\n-----> isJcrPathExists: " + Repository.isJcrPathExists(Repository.SOLUTION) + "\n");
 				// System.out.println("\n-----> repoFiles: " + repoFiles + "\n\n");
 				// System.out.println("\n-----> localFiles: " + localFiles + "\n");
 
 			}
 			Collection<String> updateList = new ArrayList<String>();
-			System.out.println("\n-----> Repository.SOLUTION: " + Repository.SOLUTION + "\n");
-			System.out.println("\n-----> isJcrPathExists: " + Repository.isJcrPathExists(Repository.SOLUTION) + "\n");
+
 			if (Repository.isJcrPathExists(Repository.SOLUTION)) {
 				Repository.getFilesFromJcr(userAgent, withManifest);
 				Collection<String> listFiltered = Repository.getDiff(
