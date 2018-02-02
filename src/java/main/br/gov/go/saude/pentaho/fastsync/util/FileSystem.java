@@ -10,13 +10,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
@@ -225,7 +229,7 @@ public class FileSystem {
 				System.out.println("\n ***** Download from JCR is complete ****** \n ");
 
 			}
-			
+
 		} finally {
 			if (fop != null) {
 				fop.close();
@@ -262,17 +266,46 @@ public class FileSystem {
 	public static boolean isDiffForTypeFile(String file1, String file2) throws IOException {
 		String ext = file1.substring(file1.length() - 3);
 		if (ext.equalsIgnoreCase("ktr") || ext.equalsIgnoreCase("kjb")) {
-			if (Repository.SYNC.equals("fs")) {
-				return diffFiles2(file2, file1);
-			} else {
-				return diffFiles2(file1, file2);
+			return isDiffForVersion(file1, file2);
+		} else {
+			return isFilesDiffs(file1, file2);
+		}
+
+	}
+
+	public static boolean isDiffForVersion(String file1, String file2) throws IOException {
+		
+		final Path _f1 = Paths.get(file1.toString());
+		final Path _f2 = Paths.get(file2.toString());
+		List<String> jcr = Files.readAllLines(_f1, Charset.forName("UTF-8"));
+		List<String> fileSystem = Files.readAllLines(_f2, Charset.forName("UTF-8"));
+
+		final Pattern PATTERN = Pattern.compile(".*<trans_version>+(\\d*).*");
+		Matcher matcherFS = PATTERN.matcher(fileSystem.toString());
+		Matcher matcherJCR = PATTERN.matcher(jcr.toString());
+		Integer versaoFS = (matcherFS.matches() && matcherFS.groupCount() == 1) ? Integer.parseInt(matcherFS.group(1))
+				: 0;
+		Integer versaoJCR = (matcherJCR.matches() && matcherJCR.groupCount() == 1)
+				? Integer.parseInt(matcherJCR.group(1))
+				: 0;
+		if (Repository.SYNC.equalsIgnoreCase("fs")) {
+			if ((versaoJCR > versaoFS)) {
+				if (Repository.DEBUG) {
+					System.out.println("\n\nThe larger version file is versaoJCR: " + versaoJCR + "\n " );
+				}
+				return true;
 			}
 
 		} else {
-			return isFilesDiffs(file2, file1);
-		}
+			if ((versaoFS > versaoJCR)) {
+				if (Repository.DEBUG) {
+					System.out.println("\n\nThe larger version file is versaoFS: " + versaoFS + "\n " );
+				}
+				return true;
+			}
 
-		// return isFilesDiffs(file1, file2);
+		}
+		return false;
 
 	}
 
@@ -317,48 +350,5 @@ public class FileSystem {
 		isf2.close();
 		return false;
 	}
-
-	public static boolean compareEspecificFiles(String file1, String file2) throws IOException {
-		boolean filesDiff = false;
-		final Path _f1 = Paths.get(file1.toString());
-		final Path _f2 = Paths.get(file2.toString());
-		List<String> jcr = Files.readAllLines(_f1, Charset.forName("UTF-8"));
-		List<String> fileSystem = Files.readAllLines(_f2, Charset.forName("UTF-8"));
-		int i = 0;
-		if (file1.length() != file2.length()) {
-			for (String line : jcr) {
-				if (!fileSystem.contains(line)) {
-					if (line.contains("<directory>") || line.contains("<directory />")
-							|| line.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-							|| line.contains("<modified_date>") || line.contains("partitionschema")
-							|| line.contains("dynamic") || line.contains("partitions_per_slave")
-							|| line.contains("slaveserver") || line.contains("master") || line.contains("hostname")
-							|| line.contains("port") || line.contains("key_for_session_key")) {
-						filesDiff = false;
-						continue;
-					}
-					if (Repository.DEBUG) {
-						System.out.println("\n-----> conteudo line: " + line.trim());
-						System.out.println("\n-----> conteudo : " + fileSystem);
-						System.out.println("\n-----> index : " + i);
-					}
-					filesDiff = true;
-					break;
-				}
-				i++;
-			}
-		}
-		return filesDiff;
-
-	}
-
-	public static boolean diffFiles2(String f1, String f2) throws IOException {
-		boolean filesDiff = false;
-		filesDiff = compareEspecificFiles(f1, f2);
-		if (!filesDiff) {
-			filesDiff = compareEspecificFiles(f2, f1);
-		}
-
-		return filesDiff;
-	}
+	
 }

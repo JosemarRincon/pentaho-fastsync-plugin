@@ -5,6 +5,11 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	$scope.update = [];
 	$scope.delete = [];
 	$scope.preserve = [];
+	ALERT_TIPE={
+			danger:"alert-danger",
+			success:"alert-success",
+			info:"alert-info"
+	}
 
 	$scope.messageAlert;
 	$scope.api = "fs";
@@ -94,7 +99,7 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 				if($scope.haveFile()){
 					$scope.hideSync = false;
 				}else{
-					setMessageAlert("There is no file change for synchronization.", "false");
+					setMessageAlert("There is no file change for synchronization.", ALERT_TIPE.info);
 					$scope.loading = false;
 					$scope.hideSync = true;
 				}
@@ -102,14 +107,14 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 			}
 			else {
 				$scope.showFlag = false;
-				setMessageAlert(data.message + ": " + data.error_message, data.error);
+				setMessageAlert(data.message + ": " + data.error_message, ALERT_TIPE.danger);
 			}
 		}).error(function (data, status) {
-			setMessageAlert("Aconteceu um problema: " + data, "true");
+			setMessageAlert("Aconteceu um problema: " + data, ALERT_TIPE.danger);
 		}).finally(function () {
 			$scope.loading = false;
 			if (dataResultSync != undefined) {
-				setMessageAlert(dataResultSync.message, dataResultSync.error);
+				setMessageAlert(dataResultSync.message, ALERT_TIPE.success);
 			}
 		});
 	};
@@ -133,11 +138,11 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 					
 				}
 				else {
-					setMessageAlert(data.message + ": " + data.error_message, "true");
+					setMessageAlert(data.message + ": " + data.error_message, ALERT_TIPE.danger);
 				}
 	
 			}).error(function (data, status) {
-				setMessageAlert("Aconteceu um problema: " + data, "true");
+				setMessageAlert("Aconteceu um problema: " + data, ALERT_TIPE.danger);
 	
 			}).finally(function () {
 				// $scope.loading = false;
@@ -160,14 +165,14 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 		
 		pentahoService.publishCube($scope).success(function (data) {
 			if (data.error == 'false') {
-				setMessageAlert(data.message, "false");
+				setMessageAlert(data.message, ALERT_TIPE.success);
 			}
 			else {
-				setMessageAlert(data.message + ": " + data.error_message, "true");
+				setMessageAlert(data.message + ": " + data.error_message, ALERT_TIPE.danger);
 			}
 
 		}).error(function (data, status) {
-			setMessageAlert("Aconteceu um problema: " + data, "true");
+			setMessageAlert("Aconteceu um problema: " + data, ALERT_TIPE.danger);
 
 		}).finally(function () {
 			$scope.loading = false;
@@ -186,12 +191,10 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 		($scope.collapse[id].length == 0) ? ($scope.collapse[id] = "collapse") : ($scope.collapse[id] = "");
 	};
 
-	var setMessageAlert = function (msg, error) {
+	var setMessageAlert = function (msg, tipe) {
 		$("#message-box").removeClass();
-		if (error == "true")
-			$("#message-box").addClass("alert alert-danger");
-		else
-			$("#message-box").addClass("alert alert-success");
+		$("#message-box").attr('role="alert"')
+		$("#message-box").addClass("alert "+tipe);
 		$("#message-alert").html(msg);
 		$("#message-box").alert();
 		$("#message-box").fadeTo(5000, 500).slideUp(500, function () {

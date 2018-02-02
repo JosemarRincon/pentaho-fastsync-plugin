@@ -82,24 +82,24 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-			<artifactId>exec-maven-plugin</artifactId>
-			<groupId>org.codehaus.mojo</groupId>
-			<version>1.6.0</version>
-			<executions>
-			<execution>
-			<id>stop-pentaho</id>
-			<phase>compile</phase>
-			<goals>
-			<goal>exec</goal>
-			</goals>
-			<configuration>
-			<executable>${app.dir}stop-pentaho.sh</executable>
-			</configuration>
-			</execution>
+<!-- 			<plugin> -->
+<!-- 			<artifactId>exec-maven-plugin</artifactId> -->
+<!-- 			<groupId>org.codehaus.mojo</groupId> -->
+<!-- 			<version>1.6.0</version> -->
+<!-- 			<executions> -->
+<!-- 			<execution> -->
+<!-- 			<id>stop-pentaho</id> -->
+<!-- 			<phase>compile</phase> -->
+<!-- 			<goals> -->
+<!-- 			<goal>exec</goal> -->
+<!-- 			</goals> -->
+<!-- 			<configuration> -->
+<!-- 			<executable>${app.dir}stop-pentaho.sh</executable> -->
+<!-- 			</configuration> -->
+<!-- 			</execution> -->
 
-			</executions>
-			</plugin>
+<!-- 			</executions> -->
+<!-- 			</plugin> -->
 
 		</plugins>
 		<pluginManagement>

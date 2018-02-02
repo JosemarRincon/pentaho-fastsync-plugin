@@ -19,4 +19,9 @@
 hr {
 	border-color: #999;
 }
+.alert-info {
+    background-color: #d9edf7 !important;
+    border-color: #bcdff1 !important;
+    color: #31708f !important;
+}
 

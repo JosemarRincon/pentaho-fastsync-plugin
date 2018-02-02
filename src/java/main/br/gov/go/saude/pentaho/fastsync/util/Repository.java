@@ -46,6 +46,7 @@ public class Repository {
 	public static String SOLUTION = "";
 	public static boolean DEBUG = false;
 	public static String SYNC = "jcr";
+	public static String ACTION = "REFRESH";
 
 	public static Collection<String> getDiff(Collection<String> firstList, Collection<String> secondList) {
 		Collection<String> _firstList = new ArrayList<String>(firstList);
@@ -123,12 +124,16 @@ public class Repository {
 
 		Collection<File> localFiles = Search.searchFileAndDirsRecursive(location);
 
-		if (localFiles == null) {
-			throw new Exception("Solution " + location + " not found in the pentaho-solution folder.");
-		}
-		for (File localFile : localFiles) {
-			String[] parts = localFile.getPath().split("pentaho-solutions");
-			ret.add(parts[1].replaceAll("/+", "/").replaceAll("\\\\+", "/"));
+		// if (localFiles == null) {
+		// throw new Exception("Solution " + location + " not found in the
+		// pentaho-solution folder.");
+		// }
+		if (localFiles != null) {
+
+			for (File localFile : localFiles) {
+				String[] parts = localFile.getPath().split("pentaho-solutions");
+				ret.add(parts[1].replaceAll("/+", "/").replaceAll("\\\\+", "/"));
+			}
 		}
 
 		return ret;
@@ -324,14 +329,14 @@ public class Repository {
 	public static void exportFileToFs2(String solutionPath, String location, ReturnFileList listFiles)
 			throws Exception, IOException {
 
-		if (!listFiles.getCreate().isEmpty() || !listFiles.getDelete().isEmpty() || !listFiles.getUpdate().isEmpty()) {
-			ZipUtil.unpack(new File(TEMP_DIR + "/" + ZIP_FILE_NAME), new File(solutionPath));
+		System.out.println("\n ------> start import to FS \n");
+		ZipUtil.unpack(new File(TEMP_DIR + "/" + ZIP_FILE_NAME), new File(solutionPath));
+		System.out.println("\n ------> end import to FS \n");
 
-			if (Repository.DEBUG) {
-				System.out.println("\n-----> name file: " + ZIP_FILE_NAME + "\n");
-				System.out.println("\n----->  Exported solutionPath FS: " + solutionPath + "\n");
+		if (Repository.DEBUG) {
+			System.out.println("\n-----> name file: " + ZIP_FILE_NAME + "\n");
+			System.out.println("\n----->  Exported solutionPath FS: " + solutionPath + "\n");
 
-			}
 		}
 
 	}
@@ -575,13 +580,15 @@ public class Repository {
 	public static void listFs(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag,
 			String tmpDir, String withManifest, String userAgent) throws Throwable {
 		String base = "/".equals(path) ? "" : path;
-		String location = (path + "/" + solution).replaceAll("/+", "/");
-		Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
+//		String location = (path + "/" + solution).replaceAll("/+", "/");
+		//verifica se a solution existe no JCR
+//		Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
+		Repository.getJcrPathProperties(Repository.SOLUTION);
 
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
 				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
 
-		Repo repoMaps = Repository.getRepoFiles(location.replaceAll("/", ":") + ":");
+		Repo repoMaps = Repository.getRepoFiles(Repository.SOLUTION.replaceAll("/", ":") + ":");
 
 		Collection<String> _repoFiles = repoMaps.getItemsList();
 
@@ -598,7 +605,7 @@ public class Repository {
 
 		Collection<String> localFiles = Repository.getLocalFiles(solutionFullPath);
 
-		localFiles.remove(StringUtils.removeStart(location, base));
+		localFiles.remove(StringUtils.removeStart(Repository.SOLUTION, base));
 
 		Collection<String> _deleteList = Repository.getDiff(localFiles, repoFiles);
 
@@ -625,27 +632,45 @@ public class Repository {
 				System.out.println("\n-----> userAgent: " + userAgent + "\n");
 				System.out.println("\n-----> keepNewerFlag:" + keepNewerFlag + " \n\n");
 				System.out.println("\n-----> Repository.SOLUTION: " + Repository.SOLUTION + "\n");
-				System.out.println("\n-----> isJcrPathExists: " + Repository.isJcrPathExists(Repository.SOLUTION) + "\n");
+				
 				// System.out.println("\n-----> repoFiles: " + repoFiles + "\n\n");
-				// System.out.println("\n-----> localFiles: " + localFiles + "\n");
+				 System.out.println("\n-----> localFiles: " + localFiles + "\n");
 
 			}
 			Collection<String> updateList = new ArrayList<String>();
+			boolean getFiles = true;
+			if(localFiles.isEmpty() && ACTION.equalsIgnoreCase("REFRESH")) {
+				getFiles = false;
+				
+			}
+			if(localFiles.isEmpty() && ACTION.equalsIgnoreCase("SYNC")) {
+				getFiles = true;
+			}
 
-			if (Repository.isJcrPathExists(Repository.SOLUTION)) {
+			if (getFiles) {
 				Repository.getFilesFromJcr(userAgent, withManifest);
 				Collection<String> listFiltered = Repository.getDiff(
 						Repository.getDiff(Repository.getDiff(repoFiles, excludeList), createList), deleteList);
+				
 				updateList = Repository.addFilesModifidied(listFiltered,
 						PentahoSystem.getApplicationContext().getSolutionPath(""), repoMaps.getModifiedDateList(),
 						base);
 				if (updateList == null) {
 					updateList = new ArrayList<String>();
 				}
+				
+				
 
 				// if (keepNewerFlag) {
 				Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
 						updateList);
+				
+				for (String item : updateList) {
+					if (!Repository.getJcrPathProperties(base + item).isFolder()) {
+						returnList.getUpdate().add(item);
+					}
+				}
+				
 
 				for (String item : preserveList) {
 					if (Repository.isJcrPathExists(item)) {
@@ -655,6 +680,8 @@ public class Repository {
 						}
 					}
 				}
+				
+				
 				Repository.newZipForUpdate();
 
 				// } else {
@@ -668,11 +695,7 @@ public class Repository {
 
 			}
 
-			for (String item : updateList) {
-				if (!Repository.getJcrPathProperties(base + item).isFolder()) {
-					returnList.getUpdate().add(item);
-				}
-			}
+			
 		} finally {
 			/*
 			 * File folder = new File(Repository.TEMP_DIR); if (folder.exists()) {
@@ -688,7 +711,7 @@ public class Repository {
 	}
 
 	public static void listJcr(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag,
-			String withManifest, String userAgent) throws Throwable {
+			String withManifest, String userAgent) throws Throwable, FileNotFoundException {
 		// String solutionPath =
 		// PentahoSystem.getApplicationContext().getSolutionPath("").replaceAll("\\\\+",
 		// "/")
@@ -792,6 +815,13 @@ public class Repository {
 		}
 	}
 
+	public static boolean haveFileForSync(ReturnFileList listFiles) {
+
+		return !listFiles.getUpdate().isEmpty() || !listFiles.getDelete().isEmpty() || !listFiles.getCreate().isEmpty()
+				? true
+				: false;
+	}
+
 	public static void syncFs(String solution, String path, String delete, Output output, String tmpDir,
 			String userAgent, String withManifest, boolean keepNewerFlag) throws Throwable {
 		String solutionPath = PentahoSystem.getApplicationContext().getSolutionPath("").replaceAll("\\\\+", "/")
@@ -804,14 +834,13 @@ public class Repository {
 			}
 		}
 		ReturnFileList listFiles = new ReturnFileList();
-		boolean haveFileForSync = false;
+
 		try {
 			solutionPath = solutionPath + Repository.SOLUTION;
 			Repository.listFs(solution, path, listFiles, keepNewerFlag, tmpDir, withManifest, userAgent);
 		} finally {
-			haveFileForSync = !listFiles.getUpdate().isEmpty() || !listFiles.getDelete().isEmpty()
-					|| !listFiles.getCreate().isEmpty() ? true : false;
-			if (haveFileForSync) {
+
+			if (haveFileForSync(listFiles)) {
 				Repository.exportFileToFs2(solutionPath, location, listFiles);
 			}
 			FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
@@ -821,10 +850,8 @@ public class Repository {
 			}
 
 		}
-		if (Repository.DEBUG) {
-			System.out.println("\n-----> haveFileForSync" + haveFileForSync + "\n");
-		}
-		if (haveFileForSync) {
+
+		if (haveFileForSync(listFiles)) {
 			output.setError(Boolean.valueOf(false));
 			output.setMessage("Successful synchronize to FileSystem from JCR.");
 
@@ -894,12 +921,8 @@ public class Repository {
 			}
 		}
 		try {
-			boolean haveFileForSync = !listFiles.getUpdate().isEmpty() || !listFiles.getDelete().isEmpty()
-					|| !listFiles.getCreate().isEmpty() ? true : false;
-			if (Repository.DEBUG) {
-				System.out.println("\n-----> haveFileForSync" + haveFileForSync + "\n");
-			}
-			if (!FileSystem.isDirectoryEmpty(dstCopyFull) && haveFileForSync) {
+
+			if (!FileSystem.isDirectoryEmpty(dstCopyFull) && haveFileForSync(listFiles)) {
 				Zip zipPack = new Zip();
 				String zipName = Repository.SOLUTION + ".zip";
 				String fullZipName = Repository.TEMP_DIR + File.separator + zipName;
@@ -916,9 +939,11 @@ public class Repository {
 							+ fullZipName.replaceAll("\\\\+", "/").replaceAll("/+", "/") + "\n");
 					System.out.println("\n----->  solution: " + Repository.SOLUTION + "\n");
 				}
+				System.out.println("\n ------> start import to JCR \n");
 				Repository.importFileToJcr(fullZipName.replaceAll("\\\\+", "/").replaceAll("/+", "/"), zipName);
 				output.setError(Boolean.valueOf(false));
 				output.setMessage("Successful synchronize to JCR from FileSystem.");
+				System.out.println("\n ------> end import to JCR \n");
 			} else {
 				output.setError(Boolean.valueOf(false));
 				output.setMessage("There is no file for synchronization.");

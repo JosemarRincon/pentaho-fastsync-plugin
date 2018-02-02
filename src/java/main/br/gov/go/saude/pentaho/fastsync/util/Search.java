@@ -52,8 +52,11 @@ public class Search {
 
 	public static Collection<File> searchFileAndDirsRecursive(String location) {
 		File root = new File(location);
+//		if (!root.exists()) {
+//			root.mkdir();
+//		}
 		if (!root.exists()) {
-			root.mkdir();
+			return null;
 		}
 		try {
 			return FileUtils.listFilesAndDirs(root, TrueFileFilter.INSTANCE, DirectoryFileFilter.DIRECTORY);

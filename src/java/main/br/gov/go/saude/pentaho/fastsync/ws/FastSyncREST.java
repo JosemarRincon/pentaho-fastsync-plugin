@@ -192,6 +192,7 @@ public class FastSyncREST {
 
 		try {
 			Repository.SYNC = id;
+			Repository.ACTION="SYNC";
 			String delete = (String) info.getQueryParameters().getFirst("delete");
 			String deletePerm = (String) info.getQueryParameters().getFirst("deletePerm");
 			Repository.DEBUG = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("debug"));
@@ -254,7 +255,7 @@ public class FastSyncREST {
 			StringUtils.removeEnd(path, "/");
 
 			Repository.TEMP_DIR = FileSystem.getTmpDir(solution).replaceAll("\\\\+", "/").replaceAll("/+", "/");
-			Repository.SOLUTION = solution;
+			Repository.SOLUTION = "/"+solution;
 			if (Repository.DEBUG) {
 				System.out.println("\n-----> tmpDir sync: " + Repository.TEMP_DIR + "\n");
 				System.out.println("\n-----> solution: " + Repository.SOLUTION + "\n");
@@ -368,6 +369,7 @@ public class FastSyncREST {
 		String path = ((String) info.getQueryParameters().getFirst("path")).replaceAll("/+", "/").replaceAll(":+", "/")
 				.replaceAll("\\\\+", "/");
 		Repository.SYNC = id;
+		Repository.ACTION="REFRESH";
 
 		if (path != null) {
 			path = path.toLowerCase();

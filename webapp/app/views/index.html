@@ -81,6 +81,20 @@
 					Refresh <span class="glyphicon glyphicon-refresh" />
 				</button>
 			</div>
+			<div class="col-sm-12 col-md-4 col-lg-2">
+
+				<input id="switch" type="checkbox" ng-model="switchFlag"
+					data-off-text="FS" data-on-text="JCR" data-size="large"
+					data-on-color="primary" data-off-color="success" bootstrap-switch></input>
+
+			</div>
+			<div class="col-sm-12 col-md-4 col-lg-2">
+
+				<button class="btn btn-danger " type="button" id="sync"
+					ng-disabled="(checkboxModel.publishCube ? inputForm.$invalid  : (hideSync) ) " ng-click="sync()">
+					Sync <span class="glyphicon glyphicon-fire"></span>
+				</button>
+			</div>
 			<!-- Dropbox para sincronizar JCR -->
 			<div class="col-sm-12 col-md-4 col-lg-3" ng-show="switchFlag">
 				<div class="input-group">
@@ -104,20 +118,7 @@
 					<!-- <li ><input type="checkbox" ng-model="form.checkboxModel.keep"> Preserve Newer Files</li> -->
 				</div>
 			</div>
-			<div class="col-sm-12 col-md-4 col-lg-2">
-
-				<input id="switch" type="checkbox" ng-model="switchFlag"
-					data-off-text="FS" data-on-text="JCR" data-size="large"
-					data-on-color="primary" data-off-color="success" bootstrap-switch></input>
-
-			</div>
-			<div class="col-sm-12 col-md-4 col-lg-2">
-
-				<button class="btn btn-danger " type="button" id="sync"
-					ng-disabled="(checkboxModel.publishCube ? inputForm.$invalid  : (hideSync) ) " ng-click="sync()">
-					Sync <span class="glyphicon glyphicon-fire"></span>
-				</button>
-			</div>
+			
 
 
 		</div>
@@ -125,10 +126,10 @@
 			<div class="col-sm-12 col-md-4 col-lg-5"
 				ng-show="checkboxModel.publishCube">
 				<input class="form-control" type="text" ng-model="schemaPath"
-					name="schemaPath" placeholder="Schema Path ex: analytics/cuboName" ng-required="true" />
+					name="schemaPath" placeholder="Schema Path ex: analytics/cuboName" ng-required="checkboxModel.publishCube" />
 				<input class="form-control" type="text" ng-model="datasourceName"
 					name="datasourceName" placeholder="Datasource Name"
-					ng-required="true" /> <input type="checkbox"
+					ng-required="checkboxModel.publishCube" /> <input type="checkbox"
 					ng-model="xmlaEnabledFlag"> XMLAEnabled</input>
 			</div>
 		</div>
