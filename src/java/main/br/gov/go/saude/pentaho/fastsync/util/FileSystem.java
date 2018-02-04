@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,6 +27,10 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.pentaho.platform.web.http.api.resources.services.FileService.RepositoryFileToStreamWrapper;
+
+import difflib.Delta;
+import difflib.DiffUtils;
+import difflib.Patch;
 
 public class FileSystem {
 	public static boolean renameFile(String oldName, String newName) {
@@ -66,17 +71,21 @@ public class FileSystem {
 		return true;
 	}
 
-	public static boolean deleteFile(File fileName) {
+	public static boolean deleteFile(File fileName) throws IOException {
 		boolean success = fileName.delete();
 
 		if (!success) {
+			 FileUtils.forceDelete(fileName);
 			return false;
 		}
 
+		
 		return true;
 	}
 
-	public static void deleteFolder(File directory) throws IOException {
+	public static void deleteFolder(File directory) throws IOException, InterruptedException {
+		System.gc();
+		Thread.sleep(2000);
 		FileUtils.deleteDirectory(directory);
 	}
 
@@ -268,7 +277,7 @@ public class FileSystem {
 		if (ext.equalsIgnoreCase("ktr") || ext.equalsIgnoreCase("kjb")) {
 			return isDiffForVersion(file1, file2);
 		} else {
-			return isFilesDiffs(file1, file2);
+			return gFileFileDiff(file1, file2);
 		}
 
 	}
@@ -313,21 +322,42 @@ public class FileSystem {
 		File f1 = new File(file1);
 		File f2 = new File(file2);
 		boolean diff = false;
-		if (f1.length() != f2.length()) {
-			InputStream isf1 = null;
-			InputStream isf2 = null;
-			isf1 = new FileInputStream(f1);
-			isf2 = new FileInputStream(f2);
+//		if (f1.length() != f2.length()) {
+			InputStream isf1 = new FileInputStream(f1.getAbsolutePath());
+			InputStream isf2 = new FileInputStream(f2.getAbsolutePath());
+			System.out.println("\n-----> comparacao");
 			try {
 				diff = compareStreams(isf1, isf2);
 				if (!diff) {
 					diff = compareStreams(isf2, isf1);
 				}
-			} catch (FileNotFoundException ex) {
+				isf1.close();
+				isf2.close();
+			} catch (Exception ex) {
 				throw new IOException(ex);
 			}
-		}
+//		}
 		return diff; // arquivos iguais
+	}
+	
+	public static boolean gFileFileDiff(String file1, String file2) throws IOException {
+		
+		
+		//build simple lists of the lines of the two testfiles
+		List<String> original = Files.readAllLines(new File(file1).toPath(),StandardCharsets.ISO_8859_1);
+		List<String> revised = Files.readAllLines(new File(file2).toPath(),StandardCharsets.ISO_8859_1);
+
+		//compute the patch: this is the diffutils part
+		Patch patch = DiffUtils.diff(original, revised);
+
+		//simple output the computed patch to console
+		for (Delta delta : patch.getDeltas()) {
+			//System.out.println(delta);
+			System.out.println("\n-----> Have Diff.");
+		   return true;
+		}
+		return false;
+		
 	}
 
 	public static boolean compareStreams(InputStream isf1, InputStream isf2) throws IOException {
@@ -346,8 +376,7 @@ public class FileSystem {
 				}
 			}
 		}
-		isf1.close();
-		isf2.close();
+		
 		return false;
 	}
 	

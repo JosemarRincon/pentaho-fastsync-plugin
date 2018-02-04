@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.zeroturnaround.zip.ZipUtil;
+import org.zeroturnaround.zip.transform.StringZipEntryTransformer;
+
 public class Zip {
 	private String packFilePath;
 	private String packDirectoryPath;
@@ -111,4 +114,13 @@ public class Zip {
 	public void setFullPathZipFileName(String fullPathZipFileName) {
 		this.fullPathZipFileName = fullPathZipFileName;
 	}
+
+	public static void transformEntry(String local,String filename) {
+		ZipUtil.transformEntry(new File(local), filename, new StringZipEntryTransformer() {
+			protected String transform(ZipEntry zipEntry, String input) throws IOException {
+				return input.toUpperCase();
+			}
+		}, new File(local+"/"+"teste.zip"));
+	}
+
 }

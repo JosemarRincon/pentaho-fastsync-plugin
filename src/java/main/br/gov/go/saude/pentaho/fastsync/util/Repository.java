@@ -39,7 +39,7 @@ import br.gov.go.saude.pentaho.fastsync.models.ReturnFileList;
 
 public class Repository {
 	private static FileService fileService = null;
-	public static final String PATH_SEPARATOR = "/";
+	public static final String SEPARATOR = "/";
 	public static final String ENCODED_PATH_SEPARATOR = ":";
 	public static String TEMP_DIR = "";
 	public static String ZIP_FILE_NAME = "";
@@ -227,7 +227,7 @@ public class Repository {
 		}
 	}
 
-	public static void deleteItemsFs(String solutionPath, String deleteList) throws IOException {
+	public static void deleteItemsFs(String solutionPath, String deleteList) throws IOException, InterruptedException {
 		for (String token : deleteList.split(",")) {
 			File item = new File(solutionPath + "/" + token.replaceAll(":", "/"));
 
@@ -362,7 +362,7 @@ public class Repository {
 		return excludeList;
 	}
 
-	public static RepositoryFileDto getJcrPathProperties(String location) throws FileNotFoundException, IOException {
+	public static RepositoryFileDto getJcrPathProperties(String location) throws FileNotFoundException, IOException, InterruptedException {
 		location = location.replaceAll("/+", ":").replaceAll("\\\\+", ":") + ":";
 		location = location.replaceAll(":+", ":");
 
@@ -526,12 +526,13 @@ public class Repository {
 		return updateList;
 	}
 
-	public static void removeFilePreservedList(String item) {
+	public static void removeFilePreservedList(String item) throws IOException {
 		// System.out.println("\n-----> remove preserved file : " + TEMP_DIR + item);
 		File file = new File(TEMP_DIR + item);
 
 		if ((file.isFile()) || ((file.isDirectory()) && (file.list().length == 0))) {
 			FileSystem.deleteFile(file);
+
 		}
 
 	}
@@ -545,8 +546,8 @@ public class Repository {
 
 		ZipUtil.pack(new File(TEMP_DIR + File.separator + solution),
 				new File(TEMP_DIR + File.separator + ZIP_FILE_NAME), new NameMapper() {
-
 					public String map(String name) {
+						System.out.println("\n----- file name: "+name);
 						return name;
 					}
 				});
@@ -580,9 +581,9 @@ public class Repository {
 	public static void listFs(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag,
 			String tmpDir, String withManifest, String userAgent) throws Throwable {
 		String base = "/".equals(path) ? "" : path;
-//		String location = (path + "/" + solution).replaceAll("/+", "/");
-		//verifica se a solution existe no JCR
-//		Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
+		// String location = (path + "/" + solution).replaceAll("/+", "/");
+		// verifica se a solution existe no JCR
+		// Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
 		Repository.getJcrPathProperties(Repository.SOLUTION);
 
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
@@ -595,7 +596,9 @@ public class Repository {
 		if (Repository.DEBUG) {
 			System.out.println("\n-----> repoFiles and folders zize: " + _repoFiles.size() + "\n");
 		}
-		FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
+
+		// DELETE FOLDER
+		// FileSystem.deleteFolder(new File(Repository.TEMP_DIR));
 
 		Collection<String> repoFiles = new ArrayList<String>();
 
@@ -632,18 +635,18 @@ public class Repository {
 				System.out.println("\n-----> userAgent: " + userAgent + "\n");
 				System.out.println("\n-----> keepNewerFlag:" + keepNewerFlag + " \n\n");
 				System.out.println("\n-----> Repository.SOLUTION: " + Repository.SOLUTION + "\n");
-				
+
 				// System.out.println("\n-----> repoFiles: " + repoFiles + "\n\n");
-				 System.out.println("\n-----> localFiles: " + localFiles + "\n");
+				System.out.println("\n-----> localFiles: " + localFiles + "\n");
 
 			}
 			Collection<String> updateList = new ArrayList<String>();
 			boolean getFiles = true;
-			if(localFiles.isEmpty() && ACTION.equalsIgnoreCase("REFRESH")) {
+			if (localFiles.isEmpty() && ACTION.equalsIgnoreCase("REFRESH")) {
 				getFiles = false;
-				
+
 			}
-			if(localFiles.isEmpty() && ACTION.equalsIgnoreCase("SYNC")) {
+			if (localFiles.isEmpty() && ACTION.equalsIgnoreCase("SYNC")) {
 				getFiles = true;
 			}
 
@@ -651,26 +654,23 @@ public class Repository {
 				Repository.getFilesFromJcr(userAgent, withManifest);
 				Collection<String> listFiltered = Repository.getDiff(
 						Repository.getDiff(Repository.getDiff(repoFiles, excludeList), createList), deleteList);
-				
+
 				updateList = Repository.addFilesModifidied(listFiltered,
 						PentahoSystem.getApplicationContext().getSolutionPath(""), repoMaps.getModifiedDateList(),
 						base);
 				if (updateList == null) {
 					updateList = new ArrayList<String>();
 				}
-				
-				
 
 				// if (keepNewerFlag) {
 				Collection<String> preserveList = Repository.getDiff(Repository.getDiff(localFiles, excludeList),
 						updateList);
-				
+
 				for (String item : updateList) {
 					if (!Repository.getJcrPathProperties(base + item).isFolder()) {
 						returnList.getUpdate().add(item);
 					}
 				}
-				
 
 				for (String item : preserveList) {
 					if (Repository.isJcrPathExists(item)) {
@@ -680,8 +680,7 @@ public class Repository {
 						}
 					}
 				}
-				
-				
+
 				Repository.newZipForUpdate();
 
 				// } else {
@@ -695,16 +694,14 @@ public class Repository {
 
 			}
 
-			
 		} finally {
-			/*
-			 * File folder = new File(Repository.TEMP_DIR); if (folder.exists()) {
-			 * FileSystem.deleteFolder(folder);
-			 * System.out.println("\n-----> Delete list FS tmp : " + Repository.TEMP_DIR +
-			 * "\n");
-			 * 
-			 * }
-			 */
+
+			File folder = new File(Repository.TEMP_DIR);
+			if (folder.exists() && !ACTION.equalsIgnoreCase("SYNC")) {
+				FileSystem.deleteFolder(folder);
+				System.out.println("\n-----> Delete list FS tmp : " + Repository.TEMP_DIR + "\n");
+
+			}
 
 		}
 

@@ -35,7 +35,7 @@
 								<!-- apply patches -->
 								<echo>deleta o release gerada do target e do diretorio de deploy</echo>
 								<delete dir="${fastsync.dir}../" verbose="false" />
-								<delete dir="${deploy.dir}/fastsync" verbose="false" />
+								<delete dir="${deploy.dir}\fastsync" verbose="true" />
 								<mkdir dir="${fastsync.dir}/lib" />
 								<echo>copia libs</echo>
 								<copy todir="${fastsync.dir}/lib">
@@ -44,6 +44,7 @@
 									</fileset>
 									<fileset dir="lib">
 										<include name="zt-zip-1.8.jar" />
+										<include name="diffutils-1.2.1.jar" />
 										<include name="pentaho-bi-platform-data-access-8.0.0.0-28.jar" />
 									</fileset>
 								</copy>
@@ -82,24 +83,24 @@
 					</execution>
 				</executions>
 			</plugin>
-<!-- 			<plugin> -->
-<!-- 			<artifactId>exec-maven-plugin</artifactId> -->
-<!-- 			<groupId>org.codehaus.mojo</groupId> -->
-<!-- 			<version>1.6.0</version> -->
-<!-- 			<executions> -->
-<!-- 			<execution> -->
-<!-- 			<id>stop-pentaho</id> -->
-<!-- 			<phase>compile</phase> -->
-<!-- 			<goals> -->
-<!-- 			<goal>exec</goal> -->
-<!-- 			</goals> -->
-<!-- 			<configuration> -->
-<!-- 			<executable>${app.dir}stop-pentaho.sh</executable> -->
-<!-- 			</configuration> -->
-<!-- 			</execution> -->
+			<!-- <plugin> -->
+			<!-- <artifactId>exec-maven-plugin</artifactId> -->
+			<!-- <groupId>org.codehaus.mojo</groupId> -->
+			<!-- <version>1.6.0</version> -->
+			<!-- <executions> -->
+			<!-- <execution> -->
+			<!-- <id>stop-pentaho</id> -->
+			<!-- <phase>compile</phase> -->
+			<!-- <goals> -->
+			<!-- <goal>exec</goal> -->
+			<!-- </goals> -->
+			<!-- <configuration> -->
+			<!-- <executable>${app.dir}stop-pentaho.sh</executable> -->
+			<!-- </configuration> -->
+			<!-- </execution> -->
 
-<!-- 			</executions> -->
-<!-- 			</plugin> -->
+			<!-- </executions> -->
+			<!-- </plugin> -->
 
 		</plugins>
 		<pluginManagement>
@@ -160,12 +161,18 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<fastsync.dir>target/release/fastsync/</fastsync.dir>
-		<deploy.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/pentaho-solutions/system/</deploy.dir>
-		<app.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/</app.dir>
+		<fastsync.dir>target\release\fastsync\</fastsync.dir>
+		<deploy.dir>C:\developer\pentaho\8\pentaho-server\pentaho-solutions\system</deploy.dir>
+		<app.dir>C:\developer\pentaho\8\pentaho-server</app.dir>
 	</properties>
 
 	<dependencies>
+
+		<dependency>
+			<groupId>com.googlecode.java-diff-utils</groupId>
+			<artifactId>diffutils</artifactId>
+			<version>1.2.1</version>
+		</dependency>
 		<!-- https://mvnrepository.com/artifact/junit/junit -->
 		<dependency>
 			<groupId>junit</groupId>

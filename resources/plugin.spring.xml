@@ -4,13 +4,11 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
        xmlns:ws="http://jax-ws.dev.java.net/spring/core"
        xmlns:wss="http://jax-ws.dev.java.net/spring/servlet"
-       xmlns:pen="http://www.pentaho.com/schema/pentaho-system"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
                            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
                            http://jax-ws.dev.java.net/spring/core http://jax-ws.dev.java.net/spring/core.xsd
-                           http://jax-ws.dev.java.net/spring/servlet http://jax-ws.dev.java.net/spring/servlet.xsd
-                           http://www.pentaho.com/schema/pentaho-system http://www.pentaho.com/schema/pentaho-system.xsd">
+                           http://jax-ws.dev.java.net/spring/servlet http://jax-ws.dev.java.net/spring/servlet.xsd">
     <context:annotation-config/>
     
     
@@ -33,10 +31,10 @@ CONVERT_URL_TO_LOWERCASE_BEFORE_COMPARISON
     <bean id="fastsync.api" class="br.gov.go.saude.pentaho.fastsync.ws.FastSyncREST"/>
     
     <!-- Plugin init process by BeanFactoryPostProcessor -->
-	<bean class="org.pentaho.platform.engine.core.system.objfac.spring.ApplicationContextPentahoSystemRegisterer" />
-    <bean id="FastSyncTemplateFactory" class="br.gov.go.saude.pentaho.fastsync.engine.FastSyncTemplateFactory">
-    	<pen:publish as-type="CLASSES">
-      	</pen:publish>
-	 </bean>
+<!-- 	<bean class="org.pentaho.platform.engine.core.system.objfac.spring.ApplicationContextPentahoSystemRegisterer" /> -->
+    <bean id="FastSyncTemplateFactory" class="br.gov.go.saude.pentaho.fastsync.engine.FastSyncTemplateFactory"/>
+<!--     	<pen:publish as-type="CLASSES"> -->
+<!--       	</pen:publish> -->
+<!-- 	 </bean> -->
 
 </beans>
