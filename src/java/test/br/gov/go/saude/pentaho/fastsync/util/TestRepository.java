@@ -11,8 +11,8 @@ import br.gov.go.saude.pentaho.fastsync.util.FileSystem;
 import br.gov.go.saude.pentaho.fastsync.util.Repository;
 
 public class TestRepository {
-	String jcr = "C:\\\\developer\\\\pentaho\\\\8\\\\pentaho-server\\\\tomcat\\\\temp\\\\siconti\\\\paineis\\\\boletim.cdfde";
-	String fs = "C:\\developer\\pentaho\\8\\pentaho-server\\pentaho-solutions\\siconti\\paineis\\boletim.cdfde";
+	String jcr = "";
+	String fs = "";
 
 	@Ignore
 	@Test
@@ -29,24 +29,11 @@ public class TestRepository {
 
 	}
 
+
 	@Ignore
 	@Test
-	public void fileDiff2() {
-
-		try {
-			Repository.SYNC = "fs";
-			assertEquals(true, FileSystem.gFileFileDiff(jcr, fs));
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
-
-	@Test
 	public void zipFileTest() {
-		String local = "C:\\developer\\pentaho\\8\\pentaho-server\\tomcat\\temp\\indicadores";
+		String local = "";
 
 		Repository.SYNC = "fs";
 		Zip.transformEntry(local, "painel.cda");

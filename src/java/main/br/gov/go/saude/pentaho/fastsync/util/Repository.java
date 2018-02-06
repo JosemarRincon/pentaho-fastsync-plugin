@@ -329,9 +329,9 @@ public class Repository {
 	public static void exportFileToFs2(String solutionPath, String location, ReturnFileList listFiles)
 			throws Exception, IOException {
 
-		System.out.println("\n ------> start import to FS \n");
+		System.out.println("\n ------> start export to FS \n");
 		ZipUtil.unpack(new File(TEMP_DIR + "/" + ZIP_FILE_NAME), new File(solutionPath));
-		System.out.println("\n ------> end import to FS \n");
+		System.out.println("\n ------> end export to FS \n");
 
 		if (Repository.DEBUG) {
 			System.out.println("\n-----> name file: " + ZIP_FILE_NAME + "\n");
@@ -630,10 +630,10 @@ public class Repository {
 			}
 
 			if (Repository.DEBUG) {
-				System.out.println("\n-----> base: " + base + "\n");
+//				System.out.println("\n-----> base: " + base + "\n");
 				System.out.println("\n-----> tmpDir: " + tmpDir + "\n");
-				System.out.println("\n-----> userAgent: " + userAgent + "\n");
-				System.out.println("\n-----> keepNewerFlag:" + keepNewerFlag + " \n\n");
+//				System.out.println("\n-----> userAgent: " + userAgent + "\n");
+//				System.out.println("\n-----> keepNewerFlag:" + keepNewerFlag + " \n\n");
 				System.out.println("\n-----> Repository.SOLUTION: " + Repository.SOLUTION + "\n");
 
 				// System.out.println("\n-----> repoFiles: " + repoFiles + "\n\n");

@@ -35,7 +35,7 @@
 								<!-- apply patches -->
 								<echo>deleta o release gerada do target e do diretorio de deploy</echo>
 								<delete dir="${fastsync.dir}../" verbose="false" />
-								<delete dir="${deploy.dir}\fastsync" verbose="true" />
+								<delete dir="${deploy.dir}\fastsync" verbose="false" />
 								<mkdir dir="${fastsync.dir}/lib" />
 								<echo>copia libs</echo>
 								<copy todir="${fastsync.dir}/lib">
@@ -161,9 +161,9 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<fastsync.dir>target\release\fastsync\</fastsync.dir>
-		<deploy.dir>C:\developer\pentaho\8\pentaho-server\pentaho-solutions\system</deploy.dir>
-		<app.dir>C:\developer\pentaho\8\pentaho-server</app.dir>
+		<fastsync.dir>target/release/fastsync/</fastsync.dir>
+		<deploy.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/pentaho-solutions/system</deploy.dir>
+		<app.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/</app.dir>
 	</properties>
 
 	<dependencies>
