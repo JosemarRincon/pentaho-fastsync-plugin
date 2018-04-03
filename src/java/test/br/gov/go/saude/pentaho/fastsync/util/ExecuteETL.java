@@ -44,7 +44,7 @@ public class ExecuteETL {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void executaRequisicao() {
+	public static void executaRequisicao()  {
 		Client c = Client.create();
 		WebResource wr = c.resource(URI);
 
@@ -53,6 +53,17 @@ public class ExecuteETL {
 				.header("Authorization", auth).get(ClientResponse.class);
 
 		String json = response.getEntity(String.class);
+		
+		try{
+			
+			if(json.isEmpty() || json == null || json.contains("authentication")) {
+				throw new Exception("Falha ao executar a consulta da API!\n"+json);
+			}
+			
+		}catch(Exception e) {
+			e.printStackTrace();
+			
+		}
 		JsonParser parser = new JsonParser();
 		JsonObject array = parser.parse(json).getAsJsonObject();
 

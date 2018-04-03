@@ -275,21 +275,24 @@ public class FileSystem {
 	public static boolean isDiffForTypeFile(String file1, String file2) throws IOException {
 		String ext = file1.substring(file1.length() - 3);
 		if (ext.equalsIgnoreCase("ktr") || ext.equalsIgnoreCase("kjb")) {
-			return isDiffForVersion(file1, file2);
+			return isDiffForVersion(file1, file2,ext);
 		} else {
 			return gFileFileDiff(file1, file2);
 		}
 
 	}
 
-	public static boolean isDiffForVersion(String file1, String file2) throws IOException {
+	public static boolean isDiffForVersion(String file1, String file2, String ext) throws IOException {
 		
 		final Path _f1 = Paths.get(file1.toString());
 		final Path _f2 = Paths.get(file2.toString());
 		List<String> jcr = Files.readAllLines(_f1, Charset.forName("UTF-8"));
 		List<String> fileSystem = Files.readAllLines(_f2, Charset.forName("UTF-8"));
-
-		final Pattern PATTERN = Pattern.compile(".*<trans_version>+(\\d*).*");
+		 Pattern PATTERN = Pattern.compile(".*<trans_version>+(\\d*).*");
+		if(ext.equalsIgnoreCase("kjb")) {
+			 PATTERN = Pattern.compile(".*<job_version>+(\\d*).*");
+		}
+		
 		Matcher matcherFS = PATTERN.matcher(fileSystem.toString());
 		Matcher matcherJCR = PATTERN.matcher(jcr.toString());
 		Integer versaoFS = (matcherFS.matches() && matcherFS.groupCount() == 1) ? Integer.parseInt(matcherFS.group(1))

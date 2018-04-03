@@ -11,16 +11,17 @@ import br.gov.go.saude.pentaho.fastsync.util.FileSystem;
 import br.gov.go.saude.pentaho.fastsync.util.Repository;
 
 public class TestRepository {
-	String jcr = "";
-	String fs = "";
+	String jcr = "/home/josemar/data_science/pentaho/cbfl/dist-packages/pentaho-server/pentaho-solutions/sim_sinasc/cargas/sinasc/base_fato_para_host_db.kjb";
+	String fs = "/home/josemar/data_science/pentaho/cbfl/dist-packages/pentaho-server/pentaho-solutions/sim_sinasc/cargas/sinasc/base_fato_para_host_db.kjb";
 
-	@Ignore
+	//@Ignore
 	@Test
 	public void fileDiff() {
 
 		try {
 			Repository.SYNC = "fs";
-			assertEquals(true, FileSystem.isDiffForTypeFile(jcr, fs));
+			Repository.DEBUG = true;
+			assertEquals(false, FileSystem.isDiffForTypeFile(jcr, fs));
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

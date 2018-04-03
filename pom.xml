@@ -162,8 +162,8 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<fastsync.dir>target/release/fastsync/</fastsync.dir>
-		<deploy.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/pentaho-solutions/system</deploy.dir>
-		<app.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/biserver-ce/</app.dir>
+		<deploy.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/pentaho-server/pentaho-solutions/system</deploy.dir>
+		<app.dir>/home/josemar/data_science/pentaho/cbfl/dist-packages/8/pentaho-server/</app.dir>
 	</properties>
 
 	<dependencies>
