@@ -42,9 +42,9 @@ angular.module('app').controller("appCtrl", function ($scope, $http, pentahoServ
 	$scope.xmlaEnabledFlag=true;
 	$scope.checkboxModel = {
 		manifest: false,
-		deletePerm: true,
+		deletePerm: false,
 		keep: true,
-		delete: true,
+		delete: false,
 		publishCube: false,
 		debug: false
 	};

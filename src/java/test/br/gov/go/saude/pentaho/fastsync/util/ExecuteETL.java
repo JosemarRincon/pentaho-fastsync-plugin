@@ -13,23 +13,23 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
 public class ExecuteETL {
-	private Integer ExecutionTime;
-	private boolean ExecutionResult;
-	private Integer ExecutionNrErrors;
-	private Integer ExecutionLinesRead;
-	private Integer ExecutionLinesWritten;
-	private Integer ExecutionLinesOutput;
-	private Integer ExecutionLinesRejected;
-	private Integer ExecutionLinesUpdated;
-	private Integer ExecutionLinesDeleted;
-	private Integer ExecutionFilesRetrieved;
-	private Integer ExecutionExitStatus;
-	private String ExecutionLogText;
-	private String ExecutionLogChannelId;
+	private Integer executionTime;
+	private boolean executionResult;
+	private Integer executionNrErrors;
+	private Integer executionLinesRead;
+	private Integer executionLinesWritten;
+	private Integer executionLinesOutput;
+	private Integer executionLinesRejected;
+	private Integer executionLinesUpdated;
+	private Integer executionLinesDeleted;
+	private Integer executionFilesRetrieved;
+	private Integer executionExitStatus;
+	private String executionLogText;
+	private String executionLogChannelId;
 	private static MultivaluedMap<String, String> queryParams;
 	private static String URI;
 	private static String auth;
-	private static JSONObject objJSON;
+	private static JSONObject objJSON = new JSONObject();
 
 	public static void addParametros(MultivaluedMap<String, String> queryParams) {
 		ExecuteETL.queryParams = queryParams;
@@ -67,7 +67,7 @@ public class ExecuteETL {
 		JsonParser parser = new JsonParser();
 		JsonObject array = parser.parse(json).getAsJsonObject();
 
-		objJSON = new JSONObject();
+		objJSON.clear();
 		for (int i = 0; i < array.getAsJsonArray("metadata").size(); i++) {
 			String colName = array.getAsJsonArray("metadata").get(i).getAsJsonObject().get("colName").getAsString()
 					.replaceAll("\"", "");
@@ -81,120 +81,122 @@ public class ExecuteETL {
 		return gson.fromJson(objJSON.toJSONString(), ExecuteETL.class);
 	}
 
+	
+
 	public Integer getExecutionTime() {
-		return ExecutionTime;
+		return executionTime;
 	}
 
 	public void setExecutionTime(Integer executionTime) {
-		ExecutionTime = executionTime;
+		this.executionTime = executionTime;
 	}
 
 	public boolean isExecutionResult() {
-		return ExecutionResult;
+		return executionResult;
 	}
 
 	public void setExecutionResult(boolean executionResult) {
-		ExecutionResult = executionResult;
+		this.executionResult = executionResult;
 	}
 
 	public Integer getExecutionNrErrors() {
-		return ExecutionNrErrors;
+		return executionNrErrors;
 	}
 
 	public void setExecutionNrErrors(Integer executionNrErrors) {
-		ExecutionNrErrors = executionNrErrors;
+		this.executionNrErrors = executionNrErrors;
 	}
 
 	public Integer getExecutionLinesRead() {
-		return ExecutionLinesRead;
+		return executionLinesRead;
 	}
 
 	public void setExecutionLinesRead(Integer executionLinesRead) {
-		ExecutionLinesRead = executionLinesRead;
+		this.executionLinesRead = executionLinesRead;
 	}
 
 	public Integer getExecutionLinesWritten() {
-		return ExecutionLinesWritten;
+		return executionLinesWritten;
 	}
 
 	public void setExecutionLinesWritten(Integer executionLinesWritten) {
-		ExecutionLinesWritten = executionLinesWritten;
+		this.executionLinesWritten = executionLinesWritten;
 	}
 
 	public Integer getExecutionLinesOutput() {
-		return ExecutionLinesOutput;
+		return executionLinesOutput;
 	}
 
 	public void setExecutionLinesOutput(Integer executionLinesOutput) {
-		ExecutionLinesOutput = executionLinesOutput;
+		this.executionLinesOutput = executionLinesOutput;
 	}
 
 	public Integer getExecutionLinesRejected() {
-		return ExecutionLinesRejected;
+		return executionLinesRejected;
 	}
 
 	public void setExecutionLinesRejected(Integer executionLinesRejected) {
-		ExecutionLinesRejected = executionLinesRejected;
+		this.executionLinesRejected = executionLinesRejected;
 	}
 
 	public Integer getExecutionLinesUpdated() {
-		return ExecutionLinesUpdated;
+		return executionLinesUpdated;
 	}
 
 	public void setExecutionLinesUpdated(Integer executionLinesUpdated) {
-		ExecutionLinesUpdated = executionLinesUpdated;
+		this.executionLinesUpdated = executionLinesUpdated;
 	}
 
 	public Integer getExecutionLinesDeleted() {
-		return ExecutionLinesDeleted;
+		return executionLinesDeleted;
 	}
 
 	public void setExecutionLinesDeleted(Integer executionLinesDeleted) {
-		ExecutionLinesDeleted = executionLinesDeleted;
+		this.executionLinesDeleted = executionLinesDeleted;
 	}
 
 	public Integer getExecutionFilesRetrieved() {
-		return ExecutionFilesRetrieved;
+		return executionFilesRetrieved;
 	}
 
 	public void setExecutionFilesRetrieved(Integer executionFilesRetrieved) {
-		ExecutionFilesRetrieved = executionFilesRetrieved;
+		this.executionFilesRetrieved = executionFilesRetrieved;
 	}
 
 	public Integer getExecutionExitStatus() {
-		return ExecutionExitStatus;
+		return executionExitStatus;
 	}
 
 	public void setExecutionExitStatus(Integer executionExitStatus) {
-		ExecutionExitStatus = executionExitStatus;
+		this.executionExitStatus = executionExitStatus;
 	}
 
 	public String getExecutionLogText() {
-		return ExecutionLogText;
+		return executionLogText;
 	}
 
 	public void setExecutionLogText(String executionLogText) {
-		ExecutionLogText = executionLogText;
+		this.executionLogText = executionLogText;
 	}
 
 	public String getExecutionLogChannelId() {
-		return ExecutionLogChannelId;
+		return executionLogChannelId;
 	}
 
 	public void setExecutionLogChannelId(String executionLogChannelId) {
-		ExecutionLogChannelId = executionLogChannelId;
+		this.executionLogChannelId = executionLogChannelId;
 	}
 
 	@Override
 	public String toString() {
-		return "ResultadoExecKTR [ExecutionTime=" + ExecutionTime + ", ExecutionResult=" + ExecutionResult
-				+ ", ExecutionNrErrors=" + ExecutionNrErrors + ", ExecutionLinesRead=" + ExecutionLinesRead
-				+ ", ExecutionLinesWritten=" + ExecutionLinesWritten + ", ExecutionLinesOutput=" + ExecutionLinesOutput
-				+ ", ExecutionLinesRejected=" + ExecutionLinesRejected + ", ExecutionLinesUpdated="
-				+ ExecutionLinesUpdated + ", ExecutionLinesDeleted=" + ExecutionLinesDeleted
-				+ ", ExecutionFilesRetrieved=" + ExecutionFilesRetrieved + ", ExecutionExitStatus="
-				+ ExecutionExitStatus + ", ExecutionLogText=" + ExecutionLogText + ", ExecutionLogChannelId="
-				+ ExecutionLogChannelId + "]";
+		return "ResultadoExecKTR [executionTime=" + executionTime + ", executionResult=" + executionResult
+				+ ", executionNrErrors=" + executionNrErrors + ", executionLinesRead=" + executionLinesRead
+				+ ", executionLinesWritten=" + executionLinesWritten + ", executionLinesOutput=" + executionLinesOutput
+				+ ", executionLinesRejected=" + executionLinesRejected + ", executionLinesUpdated="
+				+ executionLinesUpdated + ", executionLinesDeleted=" + executionLinesDeleted
+				+ ", executionFilesRetrieved=" + executionFilesRetrieved + ", executionExitStatus="
+				+ executionExitStatus + ", executionLogText=" + executionLogText + ", executionLogChannelId="
+				+ executionLogChannelId + "]";
 	}
 
 }
