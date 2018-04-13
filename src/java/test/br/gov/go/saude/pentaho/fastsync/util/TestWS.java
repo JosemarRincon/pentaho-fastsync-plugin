@@ -8,7 +8,7 @@ import org.junit.Test;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 public class TestWS {
-	//@Ignore
+	@Ignore
 	@Test
 	public void testExecKTR()  {
 

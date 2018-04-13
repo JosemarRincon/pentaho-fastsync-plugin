@@ -14,7 +14,7 @@ public class TestRepository {
 	String jcr = "/home/josemar/data_science/pentaho/cbfl/dist-packages/pentaho-server/pentaho-solutions/sim_sinasc/cargas/sinasc/base_fato_para_host_db.kjb";
 	String fs = "/home/josemar/data_science/pentaho/cbfl/dist-packages/pentaho-server/pentaho-solutions/sim_sinasc/cargas/sinasc/base_fato_para_host_db.kjb";
 
-	//@Ignore
+	@Ignore
 	@Test
 	public void fileDiff() {
 
