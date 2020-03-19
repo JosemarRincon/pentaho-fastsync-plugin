@@ -1,5 +1,12 @@
 package br.gov.go.saude.pentaho.fastsync.util;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.json.simple.JSONObject;
@@ -11,6 +18,8 @@ import com.google.gson.JsonParser;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
 
 public class ExecuteETL {
 	private Integer executionTime;
@@ -74,6 +83,49 @@ public class ExecuteETL {
 			JsonElement value = array.getAsJsonArray("resultset").get(0).getAsJsonArray().get(i);
 			objJSON.put(colName, value);
 		}
+	}
+	
+	public static void executaRequisicao2() {
+		
+
+		System.out.println(URI);
+		System.out.println(queryParams);
+		System.out.println(auth);
+
+		try {
+
+			URL url = new URL(URI);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			conn.setRequestProperty("Accept", "application/json");
+
+			if (conn.getResponseCode() != 200) {
+				throw new RuntimeException("Failed : HTTP error code : "
+						+ conn.getResponseCode());
+			}
+
+			BufferedReader br = new BufferedReader(new InputStreamReader(
+				(conn.getInputStream())));
+
+			String output;
+			System.out.println("Output from Server .... \n");
+			while ((output = br.readLine()) != null) {
+				System.out.println(output);
+			}
+
+			conn.disconnect();
+
+		  } catch (MalformedURLException e) {
+
+			e.printStackTrace();
+
+		  } catch (IOException e) {
+
+			e.printStackTrace();
+
+		  }
+
+
 	}
 
 	public static ExecuteETL getResultadoRequesicao() {

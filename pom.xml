@@ -162,8 +162,8 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<fastsync.dir>target/release/fastsync/</fastsync.dir>
-		<deploy.dir>/home/josemar/data_science/pentaho/8/pentaho-server/pentaho-solutions/system</deploy.dir>
-		<app.dir>/home/josemar/data_science/pentaho/8/pentaho-server/</app.dir>
+		<deploy.dir>/var/lib/docker/volumes/pentaho_solutions/_data/system</deploy.dir>
+		<app.dir>/var/lib/docker/volumes/pentaho_solutions/_data</app.dir>
 	</properties>
 
 	<dependencies>
@@ -314,6 +314,14 @@
 			<artifactId>json-simple</artifactId>
 			<version>1.1.1</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3.4</version>
+		</dependency>
+
+
 
 
 
