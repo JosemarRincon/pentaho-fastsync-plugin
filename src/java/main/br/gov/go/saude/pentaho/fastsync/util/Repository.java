@@ -121,17 +121,18 @@ public class Repository {
 
 	public static Collection<String> getLocalFiles(String location) throws Exception {
 		Collection<String> ret = new ArrayList<String>();
+		
+		
 
 		Collection<File> localFiles = Search.searchFileAndDirsRecursive(location);
 
-		// if (localFiles == null) {
-		// throw new Exception("Solution " + location + " not found in the
-		// pentaho-solution folder.");
-		// }
+		 if (localFiles == null) {
+			 throw new Exception("Solution " + location + " not found in the pentaho-solution folder.");
+		 }
 		if (localFiles != null) {
 
 			for (File localFile : localFiles) {
-				String[] parts = localFile.getPath().split("pentaho-solutions");
+				String[] parts = localFile.getPath().split(PluginConfig.props.getProperty("solutions.folder"));
 				ret.add(parts[1].replaceAll("/+", "/").replaceAll("\\\\+", "/"));
 			}
 		}
@@ -581,11 +582,13 @@ public class Repository {
 	public static void listFs(String solution, String path, ReturnFileList returnList, boolean keepNewerFlag,
 			String tmpDir, String withManifest, String userAgent) throws Throwable {
 		String base = "/".equals(path) ? "" : path;
+		
+		Repository.SOLUTION =  "/"+solution;
 		// String location = (path + "/" + solution).replaceAll("/+", "/");
 		// verifica se a solution existe no JCR
 		// Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
 		Repository.getJcrPathProperties(Repository.SOLUTION);
-
+		solution = PluginConfig.props.getProperty("solutions.folder")+File.separator+solution;
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
 				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
 
@@ -715,7 +718,7 @@ public class Repository {
 		// .replaceAll("/+", "/");
 
 		String base = "/".equals(path) ? "" : path;
-
+		
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
 				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
 
@@ -861,6 +864,7 @@ public class Repository {
 
 	public static void syncJcr(String solution, String path, String delete, String deletePerm, Output output,
 			boolean keepNewerFlag, String withManifest, String userAgent) throws Throwable {
+		solution = PluginConfig.props.getProperty("solutions.folder")+File.separator+solution;
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
 				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
 
@@ -881,6 +885,7 @@ public class Repository {
 		if (Repository.DEBUG) {
 			System.out.println("\n----->  solutionFullPath: " + solutionFullPath + "\n");
 			System.out.println("\n----->  destine dir: " + dstDir + "\n");
+			System.out.println("\n----->  solution: " + solution + "\n");
 
 		}
 

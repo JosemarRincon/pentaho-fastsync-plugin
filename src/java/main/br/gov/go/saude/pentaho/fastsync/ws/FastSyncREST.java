@@ -23,6 +23,8 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.plugin.services.importer.PlatformImportException;
 import org.pentaho.platform.web.http.security.PentahoLogoutHandler;
 import org.springframework.transaction.CannotCreateTransactionException;
+
+import br.gov.go.saude.pentaho.fastsync.engine.PluginConfig;
 import br.gov.go.saude.pentaho.fastsync.models.Output;
 import br.gov.go.saude.pentaho.fastsync.models.ReturnFileList;
 import br.gov.go.saude.pentaho.fastsync.security.Login;
@@ -344,6 +346,7 @@ public class FastSyncREST {
 
 		String solution = ((String) info.getQueryParameters().getFirst("solution")).replaceAll("/+", "")
 				.replaceAll(":+", "").replaceAll("\\\\+", "");
+		solution = PluginConfig.props.getProperty("solutions.folder")+File.separator+solution;
 
 		String withManifest = (String) info.getQueryParameters().getFirst("withManifest");
 		;
