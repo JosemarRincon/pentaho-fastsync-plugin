@@ -387,8 +387,8 @@ public class FastSyncREST {
 		boolean keepNewerFlag = "true".equalsIgnoreCase((String) info.getQueryParameters().getFirst("keep"));
 
 		Repository.TEMP_DIR = FileSystem.getTmpDir(solution);
-//		Repository.SOLUTION = File.separator + solution;
-		Repository.SOLUTION =  "/"+solution;
+		Repository.SOLUTION = File.separator + solution;
+		//Repository.SOLUTION =  "/"+solution;
 		if (Repository.DEBUG) {
 			System.out.println("\n-----> tmpDir list: " + Repository.TEMP_DIR + "\n");
 			System.out.println("\n-----> Sync: " + Repository.SYNC + "\n");

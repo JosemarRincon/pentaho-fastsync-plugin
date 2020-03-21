@@ -430,7 +430,8 @@ public class Repository {
 
 		try {
 			while (wrapper == null) {
-				wrapper = fileService.doGetFileOrDirAsDownload(userAgent, SOLUTION, "false");
+				String solution = Repository.SOLUTION.replaceAll("/", ":") + ":";
+				wrapper = fileService.doGetFileOrDirAsDownload(userAgent, solution, "false");
 			}
 
 		} catch (Throwable e) {
@@ -468,7 +469,7 @@ public class Repository {
 			// Date jcrTimestamp = (Date) repoList.get(base + fsFile);
 			/* System.out.println("\n-----> fsFile: " + fsFile); */
 
-			String _file = (solutionPath + "/" + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/");
+			String _file = (solutionPath + "" + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/");
 			String _jcrFilePath = (TEMP_DIR + fsFile.replaceAll(":", "/")).replaceAll("\\\\+", "/");
 			/*
 			 * System.out.println("\n-----> _jcrFilePath: " + _jcrFilePath);
@@ -583,12 +584,13 @@ public class Repository {
 			String tmpDir, String withManifest, String userAgent) throws Throwable {
 		String base = "/".equals(path) ? "" : path;
 		
-		Repository.SOLUTION =  "/"+solution;
+		//Repository.SOLUTION =  "/"+solution;
 		// String location = (path + "/" + solution).replaceAll("/+", "/");
 		// verifica se a solution existe no JCR
 		// Repository.getJcrPathProperties(location.replaceAll("/", ":") + ":");
+		Repository.SOLUTION =  solution.replaceAll(PluginConfig.props.getProperty("solutions.folder"), "");
 		Repository.getJcrPathProperties(Repository.SOLUTION);
-		solution = PluginConfig.props.getProperty("solutions.folder")+File.separator+solution;
+		//solution = PluginConfig.props.getProperty("solutions.folder")+File.separator+solution;
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
 				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
 
@@ -657,9 +659,9 @@ public class Repository {
 				Repository.getFilesFromJcr(userAgent, withManifest);
 				Collection<String> listFiltered = Repository.getDiff(
 						Repository.getDiff(Repository.getDiff(repoFiles, excludeList), createList), deleteList);
-
+				String fsRepo =	PluginConfig.props.getProperty("solutions.folder");
 				updateList = Repository.addFilesModifidied(listFiltered,
-						PentahoSystem.getApplicationContext().getSolutionPath(""), repoMaps.getModifiedDateList(),
+						PentahoSystem.getApplicationContext().getSolutionPath(fsRepo), repoMaps.getModifiedDateList(),
 						base);
 				if (updateList == null) {
 					updateList = new ArrayList<String>();
@@ -721,6 +723,8 @@ public class Repository {
 		
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
 				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
+		
+		solution =  solution.replaceAll("repositorio/dengue", "/dengue");
 
 		String location = (path + "/" + solution + "/").replaceAll("/+", "/");
 
@@ -864,7 +868,7 @@ public class Repository {
 
 	public static void syncJcr(String solution, String path, String delete, String deletePerm, Output output,
 			boolean keepNewerFlag, String withManifest, String userAgent) throws Throwable {
-		solution = PluginConfig.props.getProperty("solutions.folder")+File.separator+solution;
+		//solution = PluginConfig.props.getProperty("solutions.folder")+File.separator+solution;
 		String solutionFullPath = PentahoSystem.getApplicationContext().getSolutionPath(solution)
 				.replaceAll("\\\\+", "/").replaceAll("/+", "/");
 

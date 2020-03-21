@@ -28,6 +28,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.pentaho.platform.web.http.api.resources.services.FileService.RepositoryFileToStreamWrapper;
 
+import br.gov.go.saude.pentaho.fastsync.engine.PluginConfig;
 import difflib.Delta;
 import difflib.DiffUtils;
 import difflib.Patch;
@@ -247,7 +248,7 @@ public class FileSystem {
 	}
 
 	public static String getTmpDir(String location) {
-		String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + location;
+		String tmpDir = System.getProperty("java.io.tmpdir") + location.replaceAll(PluginConfig.props.getProperty("solutions.folder")+File.separator, "");
 
 		File dir = new File(tmpDir);
 
